@@ -1,0 +1,864 @@
+<!doctype html>
+<html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ระบบขายแอร์</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=Kanit:wght@400;500;600&family=Noto+Sans+Lao:wght@400;500;600&display=swap">
+<style>
+/* Layout: sticky top bar, one column up to 1100px. Frosted "cool air" surfaces, one accent (ice teal), periwinkle for purchases. */
+:root{
+  --bg:#edf4f5; --glow:rgba(15,157,140,.16);
+  --surface:#ffffff; --surface2:#f2f8f9; --line:#d3e2e6;
+  --fg:#0c2127; --muted:#58737b;
+  --accent:#0e9a89; --accent-ink:#ffffff; --accent-soft:rgba(14,154,137,.12);
+  --in:#5565d8; --in-soft:rgba(85,101,216,.13);
+  --good:#0f9d63; --warn:#b97a06; --bad:#d23f55;
+  --imgbg:#ffffff; --ph1:#dfeaee; --ph2:#b9ccd3; --ph3:#8fb0bb;
+  --shadow:0 1px 2px rgba(12,33,39,.06),0 8px 24px rgba(12,33,39,.06);
+  --f-d:'Kanit','IBM Plex Sans Thai','Noto Sans Lao',system-ui,sans-serif;
+  --f-b:'IBM Plex Sans Thai','Noto Sans Lao','Kanit',system-ui,sans-serif;
+  --f-m:'IBM Plex Mono',ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#081015; --glow:rgba(94,224,207,.10);
+  --surface:#0f1b21; --surface2:#142830; --line:#213742;
+  --fg:#e6f2f4; --muted:#8aa5ae;
+  --accent:#5ee0cf; --accent-ink:#04211e; --accent-soft:rgba(94,224,207,.13);
+  --in:#8fa0ff; --in-soft:rgba(143,160,255,.15);
+  --good:#4fdc9a; --warn:#f2b84b; --bad:#ff7487;
+  --imgbg:#f6fafb; --ph1:#dfeaee; --ph2:#b9ccd3; --ph3:#8fb0bb;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.28);
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#081015; --glow:rgba(94,224,207,.10);
+  --surface:#0f1b21; --surface2:#142830; --line:#213742;
+  --fg:#e6f2f4; --muted:#8aa5ae;
+  --accent:#5ee0cf; --accent-ink:#04211e; --accent-soft:rgba(94,224,207,.13);
+  --in:#8fa0ff; --in-soft:rgba(143,160,255,.15);
+  --good:#4fdc9a; --warn:#f2b84b; --bad:#ff7487;
+  --imgbg:#f6fafb; --ph1:#dfeaee; --ph2:#b9ccd3; --ph3:#8fb0bb;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.28);
+  color-scheme:dark}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background-color:var(--bg);background-image:radial-gradient(900px 420px at 85% -80px,var(--glow),transparent 70%);background-repeat:no-repeat;color:var(--fg);font:15px/1.5 var(--f-b);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 56px;min-height:100vh}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:60;background:var(--bg)}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3,h4{font-family:var(--f-d);margin:0;font-weight:500;text-wrap:balance}
+.wrap{max-width:1100px;margin:0 auto}
+.num{font-variant-numeric:tabular-nums}
+.mono{font-family:var(--f-m);font-variant-numeric:tabular-nums}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* top bar */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:50;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line);margin:0 calc(-1*max(16px,env(safe-area-inset-left,0px)));padding:10px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px))}
+.top .wrap{display:flex;align-items:center;gap:12px;justify-content:space-between;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:10px;min-width:0}
+.logo svg{flex:none}
+.logo b{font-family:var(--f-d);font-weight:600;font-size:18px;letter-spacing:.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:46vw}
+
+.tr{display:flex;align-items:center;gap:8px}
+.langwrap{position:relative}
+.langbtn{padding:9px 13px;font-family:var(--f-m);font-weight:500;letter-spacing:.04em;border-radius:12px}
+.langmenu{position:absolute;right:0;top:calc(100% + 6px);background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:6px;min-width:150px;box-shadow:var(--shadow);z-index:70;display:flex;flex-direction:column}
+.langmenu button{display:flex;gap:10px;align-items:center;border:0;background:transparent;padding:9px 12px;border-radius:10px;cursor:pointer;text-align:left;white-space:nowrap;color:var(--fg)}
+.langmenu button[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent)}
+.langmenu b{font-family:var(--f-m);width:2.2em;font-weight:500}
+.seg{display:flex;gap:4px;padding:4px;background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.seg button{flex:1;border:0;background:transparent;padding:9px 14px;border-radius:10px;cursor:pointer;color:var(--muted);font-weight:500;white-space:nowrap}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.seg.sm button{padding:6px 12px;font-size:13px}
+.seg.tabs button{padding:9px 6px}
+
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:10px 16px;cursor:pointer;font-weight:500;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:transparent}
+.btn.danger{color:var(--bad)}
+.btn.sm{padding:6px 11px;font-size:13px;border-radius:10px}
+.btn[disabled]{opacity:.5;cursor:default}
+
+section.page{padding-top:20px;display:flex;flex-direction:column;gap:18px}
+
+/* storefront */
+.hero{display:flex;flex-direction:column;gap:6px;padding-top:4px}
+.herotxt{display:flex;flex-direction:column;gap:6px;min-width:0}
+.hero.withlogo{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;align-items:center}
+.logocard{background:#fff;border-radius:28px;padding:10px;box-shadow:0 0 0 1px var(--line),0 18px 44px rgba(0,0,0,.22),0 0 60px var(--glow);width:100%;max-width:400px;justify-self:center}
+.logocard img{display:block;width:100%;height:auto;border-radius:20px}
+@media(min-width:720px){.hero.withlogo{grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:32px}.logocard{justify-self:start}}
+.logomark{width:44px;height:44px;border-radius:13px;background:#fff;object-fit:contain;flex:none;box-shadow:0 0 0 1px var(--line)}
+.hero h1{font-size:clamp(26px,5.5vw,40px);line-height:1.15;font-weight:600}
+.hero p{margin:0;color:var(--muted);max-width:60ch}
+.contact{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border:1px solid var(--line);border-radius:99px;background:var(--surface);font-size:13px;color:var(--muted)}
+.chip b{color:var(--fg);font-weight:500}
+a.chip,a.tel{text-decoration:none;color:inherit;cursor:pointer}
+.tagpill{align-self:flex-start;padding:5px 14px;border:1px solid var(--line);border-radius:99px;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.calllbl{margin-top:10px;font-size:15px;font-weight:500}
+.callbtn{display:inline-block;padding:12px 22px;border-radius:99px;background:#ff7a1a;color:#fff;font-weight:700;font-size:20px;text-decoration:none;box-shadow:0 8px 20px rgba(255,122,26,.35)}
+.callrow{display:flex;flex-wrap:wrap;gap:10px}
+.callbtn{display:inline-flex;align-items:center;gap:8px}
+.callbtn.wa{background:#25d366;box-shadow:0 8px 20px rgba(37,211,102,.35)}
+.callbtn:active{transform:scale(.97)}
+a.chip:hover{border-color:var(--accent)}
+a.tel b{color:var(--accent)}
+.tools{display:flex;flex-direction:column;gap:12px}
+.search{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:0 14px}
+.search input{border:0;background:transparent;outline:0;padding:12px 0;flex:1;min-width:0}
+.search:focus-within{border-color:var(--accent)}
+.rowtools{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:center;justify-content:space-between}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.pill{border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:99px;padding:6px 13px;cursor:pointer;font-size:13px;font-weight:500}
+.pill[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.cols{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:14px}
+.cols .circ{display:flex;gap:6px}
+.cols button{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--surface);cursor:pointer;font-family:var(--f-d);font-size:16px;color:var(--fg)}
+.cols button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+select.sel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:8px 12px}
+.count{color:var(--muted);font-size:14px}
+.grid{display:grid;grid-template-columns:repeat(var(--cols,2),minmax(0,1fr));gap:var(--gap,14px)}
+.card{container-type:inline-size;background:var(--surface);border:1px solid var(--line);border-radius:20px;overflow:hidden;display:flex;flex-direction:column;cursor:pointer;box-shadow:var(--shadow);transition:transform .15s,border-color .15s}
+.card:hover{transform:translateY(-2px);border-color:var(--accent)}
+.card.out{opacity:.72}
+.newtile{border-style:dashed;background:var(--surface2);box-shadow:none;justify-content:center}
+.newtile .ph{background:transparent;color:var(--accent)}
+.newtile .ph svg{width:34%}
+.newtile .cb{flex:0;align-items:center;text-align:center}
+.newtile h3{color:var(--accent)}
+.ph{position:relative;aspect-ratio:1/1;background:var(--imgbg);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.ph img{width:100%;height:100%;object-fit:contain}
+.ph svg{width:70%;height:auto}
+.badge{position:absolute;top:clamp(4px,3.5cqw,10px);right:clamp(4px,3.5cqw,10px);padding:.18em .8em;border-radius:99px;font-size:clamp(8px,5.2cqw,12px);font-weight:600;line-height:1.4;background:#10392b;color:#58e0a2}
+.badge.low{background:#3d2f0a;color:#f5c55a}
+.badge.zero{background:#3a2229;color:#ff8c9b}
+.badge.hide{left:clamp(4px,3.5cqw,10px);right:auto;background:#262b33;color:#b9c3d0}
+.cb{padding:clamp(6px,5cqw,16px);display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.brand{font-family:var(--f-m);font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-size:clamp(8px,5.4cqw,13px)}
+.card h3{font-size:clamp(10px,7.2cqw,18px);line-height:1.25;overflow-wrap:anywhere}
+.specs{color:var(--muted);font-size:clamp(8px,5.2cqw,13px)}
+.price{font-family:var(--f-d);font-weight:600;font-size:clamp(11px,10.5cqw,24px);line-height:1.2;margin-top:clamp(3px,3cqw,8px);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.pb{font-family:var(--f-m);color:var(--muted);font-size:clamp(9px,6.2cqw,14px)}
+.cf{margin-top:auto;padding-top:clamp(5px,4cqw,12px);display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:1px 8px;font-size:clamp(8px,5.6cqw,14px);color:var(--muted)}
+.cf::before{content:"";}
+.cf b{color:var(--fg);font-family:var(--f-d);font-size:clamp(9px,6.6cqw,17px)}
+.cf .more{color:var(--accent);font-weight:500}
+.cb .sep{border-top:1px dashed var(--line);margin-top:10px}
+
+/* admin */
+.pnav{display:flex;gap:8px;align-items:stretch;flex-wrap:wrap}
+.pnav .nb{width:46px;border:1px solid var(--line);background:var(--surface);border-radius:14px;cursor:pointer;font-size:20px;color:var(--fg)}
+.pick{position:relative;flex:1;min-width:190px;display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:8px 14px}
+.pick small{display:block;font-family:var(--f-m);color:var(--muted);font-size:13px}
+.pick b{font-family:var(--f-d);font-size:19px;font-weight:600}
+.pick input,.pick select{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
+.kpis{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.kl{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:14px}
+.dot{width:12px;height:12px;border-radius:4px;background:var(--accent);flex:none}
+.dot.in{background:var(--in)}
+.kv{font-family:var(--f-d);font-weight:600;font-size:clamp(19px,5.2vw,32px);line-height:1.15;font-variant-numeric:tabular-nums;white-space:nowrap}
+.kv small{font-size:.5em;font-weight:400;color:var(--muted)}
+.ks{color:var(--muted);font-size:13px}
+.ks .mono{font-size:13px}
+.profit{border:1px dashed var(--line);border-radius:18px;padding:16px;display:flex;flex-wrap:wrap;gap:6px 24px;justify-content:space-between;align-items:flex-end;background:var(--surface2)}
+.profit .kv{color:var(--good)}
+.profit .neg{color:var(--bad)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:16px;min-width:0}
+.panel>header{display:flex;flex-wrap:wrap;gap:8px 16px;justify-content:space-between;align-items:center;margin-bottom:12px}
+.panel h2{font-size:19px}
+.legend{display:flex;gap:14px;color:var(--muted);font-size:13px}
+.legend span{display:flex;gap:6px;align-items:center}
+.chartbox{overflow-x:auto}
+.chartbox svg{display:block;width:100%;min-width:420px;height:auto}
+.two{display:grid;grid-template-columns:1fr;gap:18px}
+@media(min-width:760px){.two{grid-template-columns:1fr 1fr}.kpis{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.list{display:flex;flex-direction:column}
+.li{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:10px 0;border-top:1px solid var(--line);min-width:0}
+.li:first-child{border-top:0}
+.th{width:48px;height:48px;border-radius:12px;background:var(--imgbg);flex:none;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.th img{width:100%;height:100%;object-fit:contain}
+.th svg{width:80%}
+.li .m{flex:1 1 150px;min-width:0;display:flex;flex-direction:column}
+.li .m b{font-weight:500;overflow-wrap:anywhere}
+.li .m span{color:var(--muted);font-size:13px;overflow-wrap:anywhere}
+.li .r{text-align:right;font-variant-numeric:tabular-nums;font-size:14px;flex:none}
+.li .r b{display:block;font-family:var(--f-d);font-weight:500}
+.li .acts{display:flex;gap:6px;flex:none}
+.empty{color:var(--muted);text-align:center;padding:28px 12px;border:1px dashed var(--line);border-radius:18px}
+.empty b{display:block;color:var(--fg);font-family:var(--f-d);font-weight:500;margin-bottom:4px}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.tag{font-size:12px;padding:2px 9px;border-radius:99px;background:var(--accent-soft);color:var(--accent);font-weight:500}
+.tag.in{background:var(--in-soft);color:var(--in)}
+.tag.warn{background:rgba(242,184,75,.16);color:var(--warn)}
+.up{color:var(--good)}.dn{color:var(--bad)}
+.note{font-size:13px;color:var(--muted)}
+.banner{background:var(--accent-soft);border:1px solid var(--accent);color:var(--fg);border-radius:14px;padding:10px 14px;font-size:14px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center}
+
+/* modal + forms */
+.modal{position:fixed;inset:0;z-index:100;background:rgba(3,10,14,.62);display:flex;align-items:flex-end;justify-content:center;padding:0}
+.modal[hidden]{display:none}
+.sheet{background:var(--surface);border:1px solid var(--line);width:100%;max-width:640px;max-height:92vh;overflow:auto;border-radius:24px 24px 0 0;padding:20px max(18px,env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) max(18px,env(safe-area-inset-left,0px))}
+@media(min-width:700px){.modal{align-items:center;padding:20px}.sheet{border-radius:24px}}
+.sheet-h{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}
+.sheet-h h2{font-size:22px}
+.x{width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:var(--surface2);cursor:pointer;color:var(--fg)}
+.form{display:flex;flex-direction:column;gap:14px}
+.form label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted);font-weight:500;min-width:0}
+.form input,.form select,.form textarea{background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:11px 12px;color:var(--fg);font-size:15px;width:100%;min-width:0}
+.form input:focus,.form select:focus,.form textarea:focus{outline:0;border-color:var(--accent)}
+.form textarea{min-height:90px;resize:vertical}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form h4{font-size:15px;margin-top:4px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.total{background:var(--surface2);border-radius:12px;padding:10px 14px;font-size:14px;color:var(--muted);display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.total b{color:var(--fg);font-family:var(--f-d);font-weight:500}
+.imgup{display:flex;gap:12px;align-items:center}
+.imgup .th{width:84px;height:84px;border:1px solid var(--line)}
+.imgbtns{display:flex;flex-wrap:wrap;gap:8px}
+.form label.btn{flex-direction:row;color:var(--fg);font-size:14px;cursor:pointer;gap:8px}
+.histbtn{display:flex;width:100%;justify-content:space-between;align-items:center;gap:12px;text-align:left;cursor:pointer;color:inherit;font:inherit}
+.histbtn b{display:block;font-family:var(--f-d);font-weight:500;font-size:17px}
+.histbtn small{color:var(--muted);font-size:13px}
+.histbtn:hover{border-color:var(--accent)}
+.err{color:var(--bad);font-size:14px;min-height:1em}
+.detail-img{aspect-ratio:4/3;background:var(--imgbg);border-radius:18px;display:flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:14px}
+.detail-img img{width:100%;height:100%;object-fit:contain}
+.detail-img svg{width:50%}
+.pre{white-space:pre-wrap;overflow-wrap:anywhere;color:var(--fg)}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 18px;border-radius:99px;z-index:200;font-size:14px;max-width:90vw}
+.toast[hidden]{display:none}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<style>*,*::before,*::after{box-sizing:border-box}body{margin:0}[hidden]{display:none!important}</style></head><body>
+<script>
+/* =========================================================
+   ตั้งค่า Firebase  (วางค่า firebaseConfig ของคุณแทนที่ null)
+   ตัวอย่าง:
+   window.FIREBASE_CONFIG = { apiKey:"...", authDomain:"...", projectId:"...", storageBucket:"...", messagingSenderId:"...", appId:"..." };
+   ========================================================= */
+window.FIREBASE_CONFIG = {
+  apiKey: "AIzaSyAiqsTUY3dS2VMXxxlSz4mg34Cw0hhRQPU",
+  authDomain: "jp-home-air.firebaseapp.com",
+  projectId: "jp-home-air",
+  storageBucket: "jp-home-air.firebasestorage.app",
+  messagingSenderId: "430993737388",
+  appId: "1:430993737388:web:5c09351960edb44279c109"
+};
+/* UID ของเจ้าของร้าน (บัญชีเดียวที่เข้าหลังบ้านได้) */
+window.OWNER_UID = 'tRYIXJFEK5VLi3dOY7UO4UwZVj02';
+/* ข้อมูลร้านเริ่มต้น (ใช้เมื่อยังไม่เคยบันทึกการตั้งค่าในฐานข้อมูล) */
+window.DEFAULT_SETTINGS = {
+  shopName:'JP Home air',
+  tagline:'แอร์ใหม่ทุกขนาด ราคาชัดเจน เช็กจำนวนเครื่องที่มีได้ทันที',
+  phone:'020 99955447', whatsapp:'+8562099955447', contact:'', address:'',
+  logoId:'logo.jpg', markId:'mark.jpg', rate:714, cols:2, lang:'th'
+};
+
+</script>
+<script>
+/* ตัวเชื่อม Firebase  (ไม่ต้องแก้) */
+(function(){
+  const V='10.12.2',base='https://www.gstatic.com/firebasejs/'+V+'/';
+  let fbp=null;
+  function fb(){
+    if(window.__FBMOCK)return Promise.resolve(window.__FBMOCK);
+    if(!fbp)fbp=(async()=>{
+      if(!window.FIREBASE_CONFIG)throw new Error('no config');
+      const [app,fs,au]=await Promise.all([import(base+'firebase-app.js'),import(base+'firebase-firestore.js'),import(base+'firebase-auth.js')]);
+      const a=app.initializeApp(window.FIREBASE_CONFIG);
+      return {fs,au,db:fs.getFirestore(a),auth:au.getAuth(a)};
+    })();
+    return fbp;
+  }
+  const clean=o=>JSON.parse(JSON.stringify(o));
+  function docRef(f,path){
+    const R=()=>f.fs.doc(f.db,path);
+    return {
+      id:path.split('/').pop(),
+      onSnapshot:(cb,eb)=>f.fs.onSnapshot(R(),s=>{
+        let d=s.exists()?s.data():null;
+        if(path==='settings/main')d=Object.assign({},window.DEFAULT_SETTINGS,d||{});
+        cb({exists:!!d,data:()=>d,id:s.id});
+      },eb||(()=>{})),
+      set:d=>f.fs.setDoc(R(),clean(d)),
+      update:d=>f.fs.updateDoc(R(),clean(d)),
+      delete:()=>f.fs.deleteDoc(R())
+    };
+  }
+  function makeDb(f){
+    return {
+      doc:p=>docRef(f,p),
+      collection:n=>({
+        onSnapshot:(cb,eb)=>f.fs.onSnapshot(f.fs.collection(f.db,n),s=>cb({docs:s.docs,size:s.size}),eb||(()=>{})),
+        doc:id=>docRef(f,n+'/'+(id||f.fs.doc(f.fs.collection(f.db,n)).id))
+      })
+    };
+  }
+  const authState=f=>new Promise(res=>{const u=f.au.onAuthStateChanged(f.auth,x=>{u();res(x)})});
+  window.FBAUTH={
+    async login(email,pw){
+      const f=await fb();
+      const c=await f.au.signInWithEmailAndPassword(f.auth,email,pw);
+      if(c.user.uid!==window.OWNER_UID){await f.au.signOut(f.auth);const e=new Error('notowner');e.code='notowner';throw e}
+    },
+    async logout(){const f=await fb();await f.au.signOut(f.auth)}
+  };
+  const toDataUrl=blob=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(blob)});
+  window.claude={use:async n=>{
+    try{
+      if(n==='db')return makeDb(await fb());
+      if(n==='user'){const f=await fb();const u=await authState(f);const ok=!!u&&u.uid===window.OWNER_UID;return {canEdit:()=>ok,isOwner:()=>ok}}
+      if(n==='assets')return {upload:async blob=>{const d=await toDataUrl(blob);return {id:d,url:d}}};
+      if(n==='downloads')return {save:async({filename,data})=>{const b=data instanceof Blob?data:new Blob([data]);const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=filename;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);return {status:'saved'}}};
+    }catch(e){return null}
+    return null;
+  }};
+})();
+
+</script>
+
+
+<header class="top"><div class="wrap">
+  <div class="logo">
+    <img class="logomark" id="logoMark" alt="" hidden><svg id="logoSvg" width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" rx="10" fill="var(--accent)"/><rect x="6" y="9" width="22" height="9" rx="3" fill="var(--accent-ink)"/><path d="M10 22c0 3 -1 4 -2 5M17 22c0 3 -1 4 -2 5M24 22c0 3 -1 4 -2 5" stroke="var(--accent-ink)" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+    <b id="shopName">ร้านแอร์</b>
+  </div>
+  <div class="tr"><div class="langwrap" id="langWrap"><button class="btn langbtn" id="langBtn" data-act="lang" aria-haspopup="true">TH</button><div class="langmenu" id="langMenu" hidden></div></div>
+  <button class="btn" id="loginBtn" data-act="login" hidden>เข้าสู่ระบบ</button>
+  <div class="seg" id="viewSeg" hidden role="group" aria-label="โหมด">
+    <button data-act="view" data-v="shop" aria-pressed="true">หน้าร้าน</button>
+    <button data-act="view" data-v="admin" aria-pressed="false">หลังบ้าน</button>
+  </div></div>
+</div></header>
+
+<main class="wrap" id="app"></main>
+
+<div class="modal" id="modal" hidden><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="mt">
+  <div class="sheet-h"><h2 id="mt"></h2><button class="x" data-act="close" aria-label="ปิด">✕</button></div>
+  <div id="mb"></div>
+</div></div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(function(){
+'use strict';
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const nf=n=>Math.round(+n||0).toLocaleString('en-US');
+const kip=n=>'₭'+nf(n), baht=n=>'฿'+nf(n);
+const pad=n=>String(n).padStart(2,'0');
+const today=()=>{const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};
+const fmtDate=d=>{if(!d)return '';const [y,m,dd]=d.split('-');return (+dd)+' '+TS[(+m)-1]+' '+y};
+const imgUrl=id=>id||'';
+const acSvg='<svg viewBox="0 0 120 84" aria-hidden="true"><rect x="8" y="12" width="104" height="38" rx="11" fill="var(--ph1)" stroke="var(--ph2)" stroke-width="2"/><rect x="16" y="38" width="88" height="7" rx="3.5" fill="var(--ph2)"/><circle cx="100" cy="24" r="3" fill="var(--ph3)"/><rect x="18" y="22" width="28" height="4" rx="2" fill="var(--ph3)" opacity=".6"/><path d="M30 58c0 7-3 10-5 13M60 58c0 7-3 10-5 13M90 58c0 7-3 10-5 13" stroke="var(--ph3)" stroke-width="3" stroke-linecap="round" fill="none"/></svg>';
+const pic=p=>p&&p.imageId?'<img alt="" loading="lazy" src="'+esc(imgUrl(p.imageId))+'">':acSvg;
+
+const S={unlocked:false,lang:null,alang:'th',products:[],purchases:[],sales:[],settings:{},view:'shop',tab:'sum',mode:'month',period:today().slice(0,7),year:today().slice(0,4),q:'',brand:'all',sort:'new',cols:null,canEdit:false,db:null,loaded:false,slow:false,dbOff:false};
+let uploading=false;
+
+const LANGNAMES={th:'ไทย',lo:'ລາວ',en:'English'};
+const MON={"th": {"full": ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"], "short": ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."]}, "lo": {"full": ["ມັງກອນ", "ກຸມພາ", "ມີນາ", "ເມສາ", "ພຶດສະພາ", "ມິຖຸນາ", "ກໍລະກົດ", "ສິງຫາ", "ກັນຍາ", "ຕຸລາ", "ພະຈິກ", "ທັນວາ"], "short": ["ມ.ກ.", "ກ.ພ.", "ມ.ນ.", "ມ.ສ.", "ພ.ພ.", "ມິ.ຖ.", "ກ.ລ.", "ສ.ຫ.", "ກ.ຍ.", "ຕ.ລ.", "ພ.ຈ.", "ທ.ວ."]}, "en": {"full": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"], "short": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]}};
+const DICT={"อีเมล": {"lo": "ອີເມວ", "en": "Email"}, "อีเมลหรือรหัสผ่านไม่ถูกต้อง": {"lo": "ອີເມວ ຫຼື ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ", "en": "Wrong email or password"}, "บัญชีนี้ไม่มีสิทธิ์เข้าหลังบ้าน": {"lo": "ບັນຊີນີ້ບໍ່ມີສິດເຂົ້າຫຼັງບ້ານ", "en": "This account has no back office access"}, "เข้าสู่ระบบไม่ได้ ตรวจอินเทอร์เน็ตแล้วลองใหม่": {"lo": "ເຂົ້າສູ່ລະບົບບໍ່ໄດ້ ກວດອິນເຕີເນັດແລ້ວລອງໃໝ່", "en": "Cannot sign in. Check your connection and try again"}, "ออกจากระบบ": {"lo": "ອອກຈາກລະບົບ", "en": "Sign out"}, "นำเข้าข้อมูลเดิม": {"lo": "ນຳເຂົ້າຂໍ້ມູນເດີມ", "en": "Import previous data"}, "นำเข้าข้อมูลเดิมแล้ว": {"lo": "ນຳເຂົ້າຂໍ້ມູນເດີມແລ້ວ", "en": "Previous data imported"}, "นำเข้าไม่สำเร็จ": {"lo": "ນຳເຂົ້າບໍ່ສຳເລັດ", "en": "Import failed"}, "สถานะหน้าร้าน": {"lo": "ສະຖານະໜ້າຮ້ານ", "en": "Storefront status"}, "อัตโนมัติ (ตามสต็อก)": {"lo": "ອັດຕະໂນມັດ (ຕາມສະຕັອກ)", "en": "Automatic (by stock)"}, "แสดงว่ามีของ": {"lo": "ສະແດງວ່າມີຂອງ", "en": "Show as in stock"}, "แสดงว่าสินค้าหมด": {"lo": "ສະແດງວ່າສິນຄ້າໝົດ", "en": "Show as sold out"}, "เปลี่ยนรหัสผ่านหลังบ้าน": {"lo": "ປ່ຽນລະຫັດຜ່ານຫຼັງບ້ານ", "en": "Change back office password"}, "รหัสผ่านปัจจุบัน": {"lo": "ລະຫັດຜ່ານປັດຈຸບັນ", "en": "Current password"}, "รหัสผ่านใหม่": {"lo": "ລະຫັດຜ່ານໃໝ່", "en": "New password"}, "ยืนยันรหัสผ่านใหม่": {"lo": "ຢືນຢັນລະຫັດຜ່ານໃໝ່", "en": "Confirm new password"}, "บันทึกรหัสผ่านใหม่": {"lo": "ບັນທຶກລະຫັດຜ່ານໃໝ່", "en": "Save new password"}, "รหัสผ่านปัจจุบันไม่ถูกต้อง": {"lo": "ລະຫັດຜ່ານປັດຈຸບັນບໍ່ຖືກຕ້ອງ", "en": "Current password is wrong"}, "รหัสผ่านใหม่ไม่ตรงกัน": {"lo": "ລະຫັດຜ່ານໃໝ່ບໍ່ກົງກັນ", "en": "New passwords do not match"}, "เปลี่ยนรหัสผ่านแล้ว": {"lo": "ປ່ຽນລະຫັດຜ່ານແລ້ວ", "en": "Password changed"}, "อย่างน้อย 4 ตัวอักษร": {"lo": "ຢ່າງໜ້ອຍ 4 ໂຕອັກສອນ", "en": "At least 4 characters"}, "เข้าสู่ระบบหลังบ้าน": {"lo": "ເຂົ້າສູ່ລະບົບຫຼັງບ້ານ", "en": "Back office login"}, "ใส่รหัสผ่านเพื่อเข้าหลังบ้าน": {"lo": "ໃສ່ລະຫັດຜ່ານເພື່ອເຂົ້າຫຼັງບ້ານ", "en": "Enter the password to open the back office"}, "รหัสผ่าน": {"lo": "ລະຫັດຜ່ານ", "en": "Password"}, "กลับหน้าร้าน": {"lo": "ກັບໜ້າຮ້ານ", "en": "Back to storefront"}, "รหัสผ่านไม่ถูกต้อง": {"lo": "ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ", "en": "Wrong password"}, "ลองผิดหลายครั้ง รอสักครู่แล้วลองใหม่": {"lo": "ລອງຜິດຫຼາຍເທື່ອ ລໍຖ້າຈັກໜ້ອຍແລ້ວລອງໃໝ່", "en": "Too many attempts, wait a moment and try again"}, "รหัสผ่านเข้าหลังบ้าน (ตั้งใหม่)": {"lo": "ລະຫັດຜ່ານເຂົ້າຫຼັງບ້ານ (ຕັ້ງໃໝ່)", "en": "Back office password (set new)"}, "เว้นว่างถ้าไม่เปลี่ยน อย่างน้อย 4 ตัว": {"lo": "ປ່ອຍວ່າງຖ້າບໍ່ປ່ຽນ ຢ່າງໜ້ອຍ 4 ໂຕ", "en": "Leave empty to keep. At least 4 characters"}, "รหัสผ่านสั้นเกินไป (อย่างน้อย 4 ตัว)": {"lo": "ລະຫັດຜ່ານສັ້ນເກີນໄປ (ຢ່າງໜ້ອຍ 4 ໂຕ)", "en": "Password too short (min 4)"}, "ล็อกหลังบ้านตอนนี้": {"lo": "ລັອກຫຼັງບ້ານດຽວນີ້", "en": "Lock back office now"}, "เข้าสู่ระบบ": {"lo": "ເຂົ້າສູ່ລະບົບ", "en": "Log in"}, "เข้าสู่ระบบหลังบ้าน": {"lo": "ເຂົ້າສູ່ລະບົບຫຼັງບ້ານ", "en": "Back-office login"}, "หลังบ้านสำหรับเจ้าของร้านและพนักงานที่ได้รับสิทธิ์เท่านั้น": {"lo": "ຫຼັງບ້ານສຳລັບເຈົ້າຂອງຮ້ານ ແລະ ພະນັກງານທີ່ໄດ້ຮັບສິດເທົ່ານັ້ນ", "en": "The back office is for the shop owner and authorised staff only."}, "ถ้าคุณมีสิทธิ์ ให้เข้าสู่ระบบ Claude ด้วยบัญชีที่ได้รับสิทธิ์แก้ไข แล้วเปิดลิงก์นี้ใหม่ ปุ่ม “หลังบ้าน” จะปรากฏขึ้นเอง": {"lo": "ຖ້າທ່ານມີສິດ ໃຫ້ເຂົ້າສູ່ລະບົບ Claude ດ້ວຍບັນຊີທີ່ໄດ້ຮັບສິດແກ້ໄຂ ແລ້ວເປີດລິ້ງນີ້ໃໝ່ ປຸ່ມ “ຫຼັງບ້ານ” ຈະປາກົດເອງ", "en": "If you have access, sign in to Claude with an account that has edit rights, then reopen this link. The “Back office” button will appear."}, "โหลดใหม่": {"lo": "ໂຫຼດໃໝ່", "en": "Reload"}, "เข้าหลังบ้าน": {"lo": "ເຂົ້າຫຼັງບ້ານ", "en": "Open back office"}, "สำรองข้อมูล": {"lo": "ສຳຮອງຂໍ້ມູນ", "en": "Backup"}, "ดาวน์โหลดข้อมูลทั้งหมดเก็บไว้เป็นไฟล์ เผื่อข้อมูลหายหรือถูกลบผิด ไฟล์มีราคาทุนด้วย เก็บให้ปลอดภัย": {"lo": "ດາວໂຫຼດຂໍ້ມູນທັງໝົດເກັບໄວ້ເປັນໄຟລ໌ ເຜື່ອຂໍ້ມູນຫາຍ ຫຼື ຖືກລຶບຜິດ ໄຟລ໌ມີລາຄາທຶນນຳ ເກັບໃຫ້ປອດໄພ", "en": "Download all data as a file in case it is lost or deleted by mistake. Files include cost prices, keep them safe."}, "ไฟล์สำรองทั้งหมด": {"lo": "ໄຟລ໌ສຳຮອງທັງໝົດ", "en": "Full backup"}, "สินค้า CSV": {"lo": "ສິນຄ້າ CSV", "en": "Products CSV"}, "รับเข้า CSV": {"lo": "ຮັບເຂົ້າ CSV", "en": "Stock-in CSV"}, "ขายออก CSV": {"lo": "ຂາຍອອກ CSV", "en": "Sales CSV"}, "บันทึกไฟล์แล้ว": {"lo": "ບັນທຶກໄຟລ໌ແລ້ວ", "en": "File saved"}, "ดาวน์โหลดไม่ได้ในหน้านี้": {"lo": "ດາວໂຫຼດບໍ່ໄດ້ໃນໜ້ານີ້", "en": "Download is not available here"}, "แอร์คุณภาพ ราคาชัดเจน": {"lo": "ແອຄຸນນະພາບ ລາຄາຊັດເຈນ", "en": "Quality air conditioners, clear prices"}, "ติดต่อ หรือ ทักแชต :": {"lo": "ຕິດຕໍ່ ຫຼື ທັກແຊັດ :", "en": "Call or chat :"}, "เครื่องปรับอากาศ": {"lo": "ເຄື່ອງປັບອາກາດ", "en": "Air conditioners"}, "โลโก้ร้าน": {"lo": "ໂລໂກ້ຮ້ານ", "en": "Shop logo"}, "คำโปรยภาษาลาว": {"lo": "ຄຳໂຄສະນາພາສາລາວ", "en": "Tagline (Lao)"}, "คำโปรยภาษาอังกฤษ": {"lo": "ຄຳໂຄສະນາພາສາອັງກິດ", "en": "Tagline (English)"}, "ปี": {"lo": "ປີ", "en": "Year"}, "ลบ": {"lo": "ລຶບ", "en": "Delete"}, "ขาย": {"lo": "ຂາຍ", "en": "Sell"}, "ต่ำ": {"lo": "ຕ່ຳ", "en": "low"}, "สูง": {"lo": "ສູງ", "en": "high"}, "ราคาต่ำ": {"lo": "ລາຄາຕ່ຳ", "en": "Price: low"}, "ราคาสูง": {"lo": "ລາຄາສູງ", "en": "Price: high"}, "หมด": {"lo": "ໝົດ", "en": "Out"}, "บาท": {"lo": "ບາດ", "en": "Baht"}, "โทร": {"lo": "ໂທ", "en": "Call"}, "กำไร": {"lo": "ກຳໄລ", "en": "Profit"}, "ขนาด": {"lo": "ຂະໜາດ", "en": "Size"}, "ซ่อน": {"lo": "ເຊື່ອງ", "en": "Hidden"}, "รุ่น": {"lo": "ລຸ້ນ", "en": "models"}, "สรุป": {"lo": "ສະຫຼຸບ", "en": "Summary"}, "เช่น": {"lo": "ເຊັ່ນ", "en": "e.g."}, "แสดง": {"lo": "ສະແດງ", "en": "Show"}, "ของปี": {"lo": "ຂອງປີ", "en": "for the year"}, "ค้นหา": {"lo": "ຄົ້ນຫາ", "en": "Search"}, "จำนวน": {"lo": "ຈຳນວນ", "en": "Quantity"}, "ถัดไป": {"lo": "ຖັດໄປ", "en": "Next"}, "ปีนี้": {"lo": "ປີນີ້", "en": "This year"}, "มีของ": {"lo": "ມີສິນຄ້າ", "en": "In stock"}, "รายปี": {"lo": "ລາຍປີ", "en": "Yearly"}, "ลบรูป": {"lo": "ລຶບຮູບ", "en": "Remove photo"}, "เดือน": {"lo": "ເດືອນ", "en": "Month"}, "เหลือ": {"lo": "ເຫຼືອ", "en": "Left"}, "ขายออก": {"lo": "ຂາຍອອກ", "en": "Sales"}, "คัดลอก": {"lo": "ສຳເນົາ", "en": "Copy"}, "ติดต่อ": {"lo": "ຕິດຕໍ່", "en": "Contact"}, "ต่อแถว": {"lo": "ຕໍ່ແຖວ", "en": "Per row"}, "ทั้งปี": {"lo": "ທັງປີ", "en": "Full year"}, "ธรรมดา": {"lo": "ທຳມະດາ", "en": "Standard"}, "บันทึก": {"lo": "ບັນທຶກ", "en": "Save"}, "ประเภท": {"lo": "ປະເພດ", "en": "Type"}, "ฝังฝ้า": {"lo": "ຝັງເພດານ", "en": "Ceiling cassette"}, "ยอดขาย": {"lo": "ຍອດຂາຍ", "en": "Sales"}, "ยี่ห้อ": {"lo": "ຍີ່ຫໍ້", "en": "Brand"}, "รายการ": {"lo": "ລາຍການ", "en": "items"}, "ลบแล้ว": {"lo": "ລຶບແລ້ວ", "en": "deleted"}, "สินค้า": {"lo": "ສິນຄ້າ", "en": "Product"}, "อัตราแลกเปลี่ยน กีบต่อบาท": {"lo": "ອັດຕາແລກປ່ຽນ ກີບຕໍ່ບາດ", "en": "Exchange rate (kip per baht)"}, "คงเหลือ": {"lo": "ຍັງເຫຼືອ", "en": "Stock"}, "ตั้งค่า": {"lo": "ຕັ້ງຄ່າ", "en": "Settings"}, "ติดผนัง": {"lo": "ຕິດຝາ", "en": "Wall-mounted"}, "ทั้งหมด": {"lo": "ທັງໝົດ", "en": "All"}, "ประวัติ": {"lo": "ປະຫວັດ", "en": "History"}, "รับเข้า": {"lo": "ຮັບເຂົ້າ", "en": "Stock in"}, "ราคาขายทั้งหมด": {"lo": "ລາຄາຂາຍທັງໝົດ", "en": "Total sale price"}, "หมดแล้ว": {"lo": "ໝົດແລ້ວ", "en": "Sold out"}, "เครื่อง": {"lo": "ເຄື່ອງ", "en": "pcs"}, "เงินกีบ": {"lo": "ເງິນກີບ", "en": "Kip"}, "เลือกปี": {"lo": "ເລືອກປີ", "en": "Select year"}, "ก่อนหน้า": {"lo": "ກ່ອນໜ້າ", "en": "Previous"}, "ของเดือน": {"lo": "ຂອງເດືອນ", "en": "for the month"}, "ชื่อรุ่น": {"lo": "ຊື່ລຸ້ນ", "en": "Model name"}, "ชื่อร้าน": {"lo": "ຊື່ຮ້ານ", "en": "Shop name"}, "ซื้อเข้า": {"lo": "ຊື້ເຂົ້າ", "en": "Purchases"}, "ซ่อนอยู่": {"lo": "ຖືກເຊື່ອງ", "en": "Hidden"}, "รายเดือน": {"lo": "ລາຍເດືອນ", "en": "Monthly"}, "ร้านแอร์": {"lo": "ຮ້ານແອ", "en": "Aircon Shop"}, "ลบสินค้า": {"lo": "ລຶບສິນຄ້າ", "en": "Delete product"}, "หมายเหตุ": {"lo": "ໝາຍເຫດ", "en": "Note"}, "เดือนนี้": {"lo": "ເດືອນນີ້", "en": "This month"}, "เบอร์โทร": {"lo": "ເບີໂທ", "en": "Phone"}, "ต้นทุนรวม": {"lo": "ຕົ້ນທຶນລວມ", "en": "Total cost"}, "ถ่ายรูปสด": {"lo": "ຖ່າຍຮູບສົດ", "en": "Take a photo"}, "ปรับสต็อก": {"lo": "ປັບສະຕັອກ", "en": "Adjusted stock for"}, "ยอดขายรวม": {"lo": "ຍອດຂາຍລວມ", "en": "Total sales"}, "รอสักครู่": {"lo": "ລໍຖ້າຈັກໜ່ອຍ", "en": "Please wait"}, "รายการขาย": {"lo": "ລາຍການຂາຍ", "en": "sales"}, "รุ่นขายดี": {"lo": "ລຸ້ນຂາຍດີ", "en": "Best sellers"}, "รูปสินค้า": {"lo": "ຮູບສິນຄ້າ", "en": "Product photo"}, "วันที่ขาย": {"lo": "ວັນທີຂາຍ", "en": "Sale date"}, "สินค้าหมด": {"lo": "ສິນຄ້າໝົດ", "en": "Sold out"}, "อัตรากำไร": {"lo": "ອັດຕາກຳໄລ", "en": "Margin"}, "เงินบาท": {"lo": "ເງິນບາດ", "en": "Baht"}, "เหลือน้อย": {"lo": "ເຫຼືອໜ້ອຍ", "en": "Low stock"}, "ไม่บังคับ": {"lo": "ບໍ່ບັງຄັບ", "en": "optional"}, "ข้อมูลร้าน": {"lo": "ຂໍ້ມູນຮ້ານ", "en": "Shop info"}, "คงเหลือรวม": {"lo": "ຍັງເຫຼືອລວມ", "en": "Total in stock"}, "คัดลอกแล้ว": {"lo": "ສຳເນົາແລ້ວ", "en": "Copied"}, "ชื่อลูกค้า": {"lo": "ຊື່ລູກຄ້າ", "en": "Customer name"}, "บันทึกแล้ว": {"lo": "ບັນທຶກແລ້ວ", "en": "Saved"}, "รายละเอียด": {"lo": "ລາຍລະອຽດ", "en": "Details"}, "ลูกค้าเห็น": {"lo": "ລູກຄ້າເຫັນ", "en": "Visible to customers"}, "สินค้าใหม่": {"lo": "ສິນຄ້າໃໝ່", "en": "New product"}, "เครื่องมือ": {"lo": "ເຄື່ອງມື", "en": "Tools"}, "เพิ่มจำนวน": {"lo": "ເພີ່ມຈຳນວນ", "en": "Add stock"}, "เรียงลำดับ": {"lo": "ຮຽງລຳດັບ", "en": "Sort"}, "เลือกเดือน": {"lo": "ເລືອກເດືອນ", "en": "Select month"}, "ใหม่ล่าสุด": {"lo": "ໃໝ່ຫຼ້າສຸດ", "en": "Newest"}, "ซื้อเข้ารวม": {"lo": "ຊື້ເຂົ້າລວມ", "en": "Total purchases"}, "ตู้ตั้งพื้น": {"lo": "ຕູ້ຕັ້ງພື້ນ", "en": "Floor-standing"}, "ที่อยู่ร้าน": {"lo": "ທີ່ຢູ່ຮ້ານ", "en": "Shop address"}, "รวมซื้อเข้า": {"lo": "ລວມຊື້ເຂົ້າ", "en": "Total purchase"}, "ลบไม่สำเร็จ": {"lo": "ລຶບບໍ່ສຳເລັດ", "en": "Could not delete"}, "อัปโหลดแล้ว": {"lo": "ອັບໂຫຼດແລ້ວ", "en": "Uploaded"}, "เดือนล่าสุด": {"lo": "ເດືອນຫຼ້າສຸດ", "en": "latest months"}, "ไม่พบรายการ": {"lo": "ບໍ່ພົບລາຍການ", "en": "No records found"}, "กำลังอัปโหลด": {"lo": "ກຳລັງອັບໂຫຼດ", "en": "Uploading"}, "ข้อมูลสินค้า": {"lo": "ຂໍ້ມູນສິນຄ້າ", "en": "Product details"}, "คงเหลือเพียง": {"lo": "ເຫຼືອພຽງ", "en": "Only"}, "จำนวนคงเหลือ": {"lo": "ຈຳນວນຍັງເຫຼືອ", "en": "Quantity left"}, "ต้นทุนเฉลี่ย": {"lo": "ຕົ້ນທຶນສະເລ່ຍ", "en": "Avg cost"}, "บันทึกการขาย": {"lo": "ບັນທຶກການຂາຍ", "en": "Record sale"}, "รายการต่อแถว": {"lo": "ລາຍການຕໍ່ແຖວ", "en": "items per row"}, "รายเดือนในปี": {"lo": "ລາຍເດືອນໃນປີ", "en": "Monthly in"}, "ลบสินค้าแล้ว": {"lo": "ລຶບສິນຄ້າແລ້ວ", "en": "Product deleted"}, "สต็อกคงเหลือ": {"lo": "ສະຕັອກຄົງເຫຼືອ", "en": "Stock on hand"}, "ช่องทางติดต่อ": {"lo": "ຊ່ອງທາງຕິດຕໍ່", "en": "Contact"}, "รับสินค้าเข้า": {"lo": "ຮັບສິນຄ້າເຂົ້າ", "en": "Receive stock"}, "รายการรับเข้า": {"lo": "ລາຍການຮັບເຂົ້າ", "en": "receipts"}, "วันที่รับเข้า": {"lo": "ວັນທີຮັບເຂົ້າ", "en": "Date received"}, "กำไรขั้นต้นรวม": {"lo": "ກຳໄລຂັ້ນຕົ້ນລວມ", "en": "Total gross profit"}, "คำนวณสต็อกใหม่": {"lo": "ຄຳນວນສະຕັອກໃໝ່", "en": "Recalculate stock"}, "คำนวณไม่สำเร็จ": {"lo": "ຄຳນວນບໍ່ສຳເລັດ", "en": "Could not recalculate"}, "ยังไม่มีสินค้า": {"lo": "ຍັງບໍ່ມີສິນຄ້າ", "en": "No products yet"}, "กำลังโหลดสินค้า": {"lo": "ກຳລັງໂຫຼດສິນຄ້າ", "en": "Loading products"}, "ซ่อนจากหน้าร้าน": {"lo": "ເຊື່ອງຈາກໜ້າຮ້ານ", "en": "Hide from storefront"}, "ราคาซื้อทั้งหมด": {"lo": "ລາຄາຊື້ທັງໝົດ", "en": "Total purchase price"}, "ลบรายการขายแล้ว": {"lo": "ລຶບລາຍການຂາຍແລ້ວ", "en": "Sale deleted"}, "เพิ่มสินค้าใหม่": {"lo": "ເພີ່ມສິນຄ້າໃໝ່", "en": "Add new product"}, "โหลดช้ากว่าปกติ": {"lo": "ໂຫຼດຊ້າກວ່າປົກກະຕິ", "en": "Loading is slow"}, "บันทึกการขายแล้ว": {"lo": "ບັນທຶກການຂາຍແລ້ວ", "en": "Sale recorded"}, "บันทึกการตั้งค่า": {"lo": "ບັນທຶກການຕັ້ງຄ່າ", "en": "Save settings"}, "บันทึกการรับเข้า": {"lo": "ບັນທຶກການຮັບເຂົ້າ", "en": "Save receipt"}, "มูลค่าตามราคาขาย": {"lo": "ມູນຄ່າຕາມລາຄາຂາຍ", "en": "Value at sale price"}, "เลือกจากแกลเลอรี": {"lo": "ເລືອກຈາກຄັງຮູບ", "en": "Choose from gallery"}, "กดอีกครั้งเพื่อลบ": {"lo": "ກົດອີກຄັ້ງເພື່ອລຶບ", "en": "Tap again to delete"}, "คำโปรยใต้ชื่อร้าน": {"lo": "ຄຳໂຄສະນາໃຕ້ຊື່ຮ້ານ", "en": "Tagline under shop name"}, "เห็นเฉพาะหลังบ้าน": {"lo": "ເຫັນສະເພາະຫຼັງບ້ານ", "en": "Back office only"}, "แก้ไขตรงนี้ได้เลย": {"lo": "ແກ້ໄຂບ່ອນນີ້ໄດ້ເລີຍ", "en": "Edit here directly"}, "ใส่จำนวนอย่างน้อย": {"lo": "ໃສ່ຈຳນວນຢ່າງໜ້ອຍ", "en": "Enter at least"}, "ยี่ห้อ รุ่น ลูกค้า": {"lo": "ຍີ່ຫໍ້ ລຸ້ນ ລູກຄ້າ", "en": "Brand, model, customer"}, "ไปที่หลังบ้านแท็บรับเข้าเพื่อเพิ่มสินค้าชิ้นแรก": {"lo": "ໄປທີ່ຫຼັງບ້ານ ແຖບຮັບເຂົ້າ ເພື່ອເພີ່ມສິນຄ້າອັນທຳອິດ", "en": "Go to the back office, Stock in tab, to add your first product"}, "ยังโหลดข้อมูลไม่ได้": {"lo": "ຍັງໂຫຼດຂໍ້ມູນບໍ່ໄດ້", "en": "Can't load data yet"}, "รายละเอียดเพิ่มเติม": {"lo": "ລາຍລະອຽດເພີ່ມເຕີມ", "en": "More details"}, "ลบรายการรับเข้าแล้ว": {"lo": "ລຶບລາຍການຮັບເຂົ້າແລ້ວ", "en": "Receipt deleted"}, "ไม่พบสินค้าที่ค้นหา": {"lo": "ບໍ່ພົບສິນຄ້າທີ່ຄົ້ນຫາ", "en": "No products match your search"}, "กำไรขั้นต้นจากที่ขาย คือยอดขายหักต้นทุนเฉลี่ยของรุ่นนั้น": {"lo": "ກຳໄລຂັ້ນຕົ້ນຈາກການຂາຍ ຄືຍອດຂາຍຫັກຕົ້ນທຶນສະເລ່ຍຂອງລຸ້ນນັ້ນ", "en": "Gross profit from sales (sales minus average cost of that model)"}, "บันทึกการตั้งค่าแล้ว": {"lo": "ບັນທຶກການຕັ້ງຄ່າແລ້ວ", "en": "Settings saved"}, "บันทึกการรับเข้าแล้ว": {"lo": "ບັນທຶກການຮັບເຂົ້າແລ້ວ", "en": "Receipt saved"}, "ใส่ยี่ห้อและชื่อรุ่น": {"lo": "ໃສ່ຍີ່ຫໍ້ ແລະ ຊື່ລຸ້ນ", "en": "Enter brand and model name"}, "ค้นหายี่ห้อ หรือรุ่น": {"lo": "ຄົ້ນຫາຍີ່ຫໍ້ ຫຼື ລຸ້ນ", "en": "Search brand or model"}, "ราคาซื้อเข้าต่อเครื่อง": {"lo": "ລາຄາຊື້ເຂົ້າຕໍ່ເຄື່ອງ", "en": "Purchase price per unit"}, "สต็อกตรงกับประวัติแล้ว": {"lo": "ສະຕັອກກົງກັບປະຫວັດແລ້ວ", "en": "Stock already matches history"}, "สต็อกทุกรุ่นยังเพียงพอ": {"lo": "ສະຕັອກທຸກລຸ້ນຍັງພຽງພໍ", "en": "Stock is sufficient for all models"}, "รับสินค้าเข้าก่อนในแท็บรับเข้า": {"lo": "ຮັບສິນຄ້າເຂົ້າກ່ອນໃນແຖບຮັບເຂົ້າ", "en": "Receive stock first in the Stock in tab"}, "รุ่นที่ยังไม่เคยรับเข้า": {"lo": "ລຸ້ນທີ່ຍັງບໍ່ເຄີຍຮັບເຂົ້າ", "en": "A model you haven't received yet"}, "รอรูปอัปโหลดให้เสร็จก่อน": {"lo": "ລໍຮູບອັບໂຫຼດໃຫ້ແລ້ວກ່ອນ", "en": "Wait for the photo to finish uploading"}, "ราคาที่ขายจริงต่อเครื่อง": {"lo": "ລາຄາທີ່ຂາຍຈິງຕໍ່ເຄື່ອງ", "en": "Actual sale price per unit"}, "ใส่ราคาที่ขายเป็นเงินกีบ": {"lo": "ໃສ່ລາຄາທີ່ຂາຍເປັນເງິນກີບ", "en": "Enter the sale price in kip"}, "รายละเอียดที่แสดงหน้าร้าน": {"lo": "ລາຍລະອຽດທີ່ສະແດງໜ້າຮ້ານ", "en": "Details shown on the storefront"}, "ยังไม่มีรายการขายในช่วงนี้": {"lo": "ຍັງບໍ່ມີລາຍການຂາຍໃນຊ່ວງນີ້", "en": "No sales in this period"}, "ลองเปลี่ยนเดือนหรือคำค้นหา": {"lo": "ລອງປ່ຽນເດືອນ ຫຼື ຄຳຄົ້ນຫາ", "en": "Try another month or search term"}, "ใส่ราคาซื้อเข้าเป็นเงินกีบ": {"lo": "ໃສ່ລາຄາຊື້ເຂົ້າເປັນເງິນກີບ", "en": "Enter the purchase price in kip"}, "จำนวนต่อแถวเริ่มต้นหน้าร้าน": {"lo": "ຈຳນວນຕໍ່ແຖວເລີ່ມຕົ້ນໜ້າຮ້ານ", "en": "Default items per row on storefront"}, "ยังไม่มีรายละเอียดเพิ่มเติม": {"lo": "ຍັງບໍ່ມີລາຍລະອຽດເພີ່ມເຕີມ", "en": "No additional details yet"}, "ลบรูปแล้ว จะมีผลเมื่อกดบันทึก": {"lo": "ລຶບຮູບແລ້ວ ຈະມີຜົນເມື່ອກົດບັນທຶກ", "en": "Photo removed; applies when you save"}, "ใส่ราคาขายหน้าร้านเป็นเงินกีบ": {"lo": "ໃສ່ລາຄາຂາຍໜ້າຮ້ານເປັນເງິນກີບ", "en": "Enter the storefront price in kip"}, "คัดลอกไม่ได้ ลองเลือกข้อความเอง": {"lo": "ສຳເນົາບໍ່ໄດ້ ລອງເລືອກຂໍ້ຄວາມເອງ", "en": "Can't copy; select the text manually"}, "บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง": {"lo": "ບັນທຶກບໍ່ສຳເລັດ ລອງໃໝ່ອີກຄັ້ງ", "en": "Could not save; try again"}, "รับประกัน ระบบน้ำยา ฟังก์ชัน ฯลฯ": {"lo": "ຮັບປະກັນ ລະບົບນ້ຳຢາ ຟັງຊັນ ແລະອື່ນໆ", "en": "Warranty, refrigerant, features, etc."}, "ราคาขายที่แสดงหน้าร้านต่อเครื่อง": {"lo": "ລາຄາຂາຍທີ່ສະແດງໜ້າຮ້ານຕໍ່ເຄື່ອງ", "en": "Storefront price per unit"}, "กราฟยอดขายและยอดซื้อเข้า หน่วยกีบ": {"lo": "ກຣາຟຍອດຂາຍ ແລະ ຍອດຊື້ເຂົ້າ ໜ່ວຍກີບ", "en": "Chart of sales and purchases in kip"}, "คำนวณจำนวนคงเหลือของทุกรุ่นใหม่จากประวัติรับเข้าและขายออก ใช้เมื่อตัวเลขคงเหลือไม่ตรง": {"lo": "ຄຳນວນຈຳນວນຄົງເຫຼືອຂອງທຸກລຸ້ນໃໝ່ຈາກປະຫວັດຮັບເຂົ້າ ແລະ ຂາຍອອກ ໃຊ້ເມື່ອຕົວເລກຄົງເຫຼືອບໍ່ກົງ", "en": "Recalculate stock for every model from receipts and sales. Use it when the stock numbers don't match."}, "สินค้าหมดสต็อก รับเข้าก่อนจึงจะขายได้": {"lo": "ສິນຄ້າໝົດສະຕັອກ ຕ້ອງຮັບເຂົ້າກ່ອນຈຶ່ງຈະຂາຍໄດ້", "en": "Out of stock; receive stock before selling"}, "อัปโหลดไม่สำเร็จ ลองรูปอื่นหรือลองใหม่": {"lo": "ອັບໂຫຼດບໍ່ສຳເລັດ ລອງຮູບອື່ນ ຫຼື ລອງໃໝ່", "en": "Upload failed; try another photo or retry"}, "เปิดหน้านี้ผ่านลิงก์ที่ได้รับสิทธิ์เข้าดู แล้วลองใหม่": {"lo": "ເປີດໜ້ານີ້ຜ່ານລິ້ງທີ່ໄດ້ຮັບສິດເຂົ້າເບິ່ງ ແລ້ວລອງໃໝ່", "en": "Open this page through a link you have access to, then try again"}, "แอร์ใหม่ทุกขนาด ราคาชัดเจน เช็กจำนวนเครื่องที่มีได้ทันที": {"lo": "ແອໃໝ່ທຸກຂະໜາດ ລາຄາຊັດເຈນ ເຊັກຈຳນວນເຄື່ອງທີ່ມີໄດ້ທັນທີ", "en": "New air conditioners in every size, clear prices, live stock counts"}, "กดที่สินค้าที่มีของเพื่อบันทึกการขายได้ทันที สินค้าทั้งหมดมาจากหน้ารับเข้า": {"lo": "ກົດທີ່ສິນຄ້າທີ່ມີເພື່ອບັນທຶກການຂາຍໄດ້ທັນທີ ສິນຄ້າທັງໝົດມາຈາກໜ້າຮັບເຂົ້າ", "en": "Tap an in-stock product to record a sale right away. All products come from the Stock in tab."}, "อัตราแลกเปลี่ยนใช้คำนวณช่องราคาบาทให้อัตโนมัติเวลากรอกราคากีบ แก้ทับได้ทุกครั้ง": {"lo": "ອັດຕາແລກປ່ຽນໃຊ້ຄຳນວນຊ່ອງລາຄາບາດໃຫ້ອັດຕະໂນມັດເວລາກອກລາຄາກີບ ແກ້ທັບໄດ້ທຸກຄັ້ງ", "en": "The exchange rate fills in the baht price automatically when you type the kip price. You can always overwrite it."}, "กดที่สินค้าเพื่อเพิ่มจำนวน พร้อมแก้ไขชื่อ รูป ราคา และรายละเอียดได้ในหน้าต่างเดียว หรือกดการ์ดเพิ่มสินค้าใหม่สำหรับรุ่นที่ยังไม่มี": {"lo": "ກົດທີ່ສິນຄ້າເພື່ອເພີ່ມຈຳນວນ ພ້ອມແກ້ໄຂຊື່ ຮູບ ລາຄາ ແລະ ລາຍລະອຽດໄດ້ໃນໜ້າຕ່າງດຽວ ຫຼື ກົດບັດເພີ່ມສິນຄ້າໃໝ່ສຳລັບລຸ້ນທີ່ຍັງບໍ່ມີ", "en": "Tap a product to add stock and edit its name, photo, price and details in one window, or tap the Add new product card for a model you don't have yet."}, "ข้อมูลราคาซื้อเข้า ประวัติรับเข้า และประวัติขาย อ่านได้เฉพาะผู้มีสิทธิ์แก้ไขของหน้านี้ ผู้เข้าชมทั่วไปเห็นเพียงสินค้า ราคาขาย และจำนวนคงเหลือ": {"lo": "ຂໍ້ມູນລາຄາຊື້ເຂົ້າ ປະຫວັດຮັບເຂົ້າ ແລະ ປະຫວັດຂາຍ ອ່ານໄດ້ສະເພາະຜູ້ມີສິດແກ້ໄຂຂອງໜ້ານີ້ ຜູ້ເຂົ້າຊົມທົ່ວໄປເຫັນພຽງສິນຄ້າ ລາຄາຂາຍ ແລະ ຈຳນວນຄົງເຫຼືອ", "en": "Purchase prices, receipt history and sales history can only be read by people with edit access. Visitors only see products, sale prices and stock."}, "มีประวัติรับเข้าหรือขายแล้ว จึงลบสินค้าไม่ได้ ให้ใช้ตัวเลือกซ่อนจากหน้าร้านแทน": {"lo": "ມີປະຫວັດຮັບເຂົ້າ ຫຼື ຂາຍແລ້ວ ຈຶ່ງລຶບສິນຄ້າບໍ່ໄດ້ ໃຫ້ໃຊ້ຕົວເລືອກເຊື່ອງຈາກໜ້າຮ້ານແທນ", "en": "This product has history, so it can't be deleted. Use Hide from storefront instead."}, "ภาษา": {"lo": "ພາສາ", "en": "Language"}, "ภาษาหลังบ้าน": {"lo": "ພາສາຫຼັງບ້ານ", "en": "Back-office language"}, "ภาษาเริ่มต้นหน้าร้าน": {"lo": "ພາສາເລີ່ມຕົ້ນໜ້າຮ້ານ", "en": "Default storefront language"}, "หน้าร้าน": {"lo": "ໜ້າຮ້ານ", "en": "Storefront"}, "หลังบ้าน": {"lo": "ຫຼັງບ້ານ", "en": "Back office"}, "โหมด": {"lo": "ໂໝດ", "en": "Mode"}, "ปิด": {"lo": "ປິດ", "en": "Close"}};
+function shopLang(){return S.lang||S.settings.lang||'th'}
+function L(){const l=S.view==='admin'?S.alang:shopLang();return LANGNAMES[l]?l:'th'}
+const TM=new Proxy([],{get:(_,k)=>MON[L()].full[k]});
+const TS=new Proxy([],{get:(_,k)=>MON[L()].short[k]});
+const SP=()=>L()==='th'?'':' ';
+const DEFTAG='แอร์ใหม่ทุกขนาด ราคาชัดเจน เช็กจำนวนเครื่องที่มีได้ทันที';
+function taglineText(){const s=S.settings,l=L(),th=(s.tagline||'').trim();const own=l==='th'?th:String(s['tagline_'+l]||'').trim();if(own)return own;return(!th||th===DEFTAG)?tr(DEFTAG):th}
+function tr(k){const l=L();if(l==='th')return k;const d=DICT[k];return d&&d[l]!=null?d[l]:k}
+function langOpts(cur){return Object.keys(LANGNAMES).map(c=>'<option value="'+c+'"'+(c===cur?' selected':'')+'>'+c.toUpperCase()+' · '+LANGNAMES[c]+'</option>').join('')}
+function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
+function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+function cols(){const c=+S.cols||+lsGet('ac_cols')||+S.settings.cols||2;return Math.min(6,Math.max(2,c))}
+
+async function submitLogin(f){
+  const err=$('#loginErr');err.textContent='';
+  try{await window.FBAUTH.login(f.elements.email.value.trim(),f.elements.pw.value);location.hash='';location.reload()}
+  catch(e){const c=e&&e.code||e&&e.message||'';err.textContent=c==='notowner'?tr('บัญชีนี้ไม่มีสิทธิ์เข้าหลังบ้าน'):/credential|password|user-not-found|invalid/.test(c)?tr('อีเมลหรือรหัสผ่านไม่ถูกต้อง'):tr('เข้าสู่ระบบไม่ได้ ตรวจอินเทอร์เน็ตแล้วลองใหม่')}
+}
+async function seedOld(){
+  try{
+    const P='xi7asl7btf8fyhae21lh';
+    await S.db.doc('products/'+P).set({brand:'Gree',btu:32000,createdAt:'2026-11-13T08:59:43.906Z',details:'ລະບົບໂອໂຕ້',hidden:false,imageId:'',name:'Gree 128',priceBaht:3000,priceKip:3000000,stock:9,type:'Inverter'});
+    const pu=[['lyth32zpjie1saqs99sq','2026-11-13T08:59:43.906Z','2026-11-13',10],['umoh1gs3w9afiojk7ddc','2026-11-13T14:35:58.269Z','2026-11-13',4]];
+    for(const [id,c,d,q] of pu)await S.db.doc('purchases/'+id).set({costBaht:2000,costKip:1500000,createdAt:c,date:d,productId:P,qty:q});
+    const sa=[['2zndyn2rbo84si9i9x95','2026-11-13T12:42:50.703Z','2026-11-13',1,3500],['3ikhdmxay8o0t4ez7saf','2026-11-13T09:00:39.924Z','2026-11-13',1,3500],['4x95gq19d5s0h8wdk9n4','2026-11-16T10:00:40.593Z','2026-11-16',1,3000],['h8jgj2iw779yewjiluz5','2026-11-13T14:35:34.305Z','2026-11-13',2,3000]];
+    for(const [id,c,d,q,p] of sa)await S.db.doc('sales/'+id).set({costBaht:2000,costKip:1500000,createdAt:c,customer:'',date:d,note:'',priceBaht:p,priceKip:p*1000,productId:P,qty:q});
+    toast(tr('นำเข้าข้อมูลเดิมแล้ว'));
+  }catch(e){toast(tr('นำเข้าไม่สำเร็จ'))}
+}
+async function backup(k){
+  const dl=await claude.use('downloads');
+  if(!dl){toast(tr('ดาวน์โหลดไม่ได้ในหน้านี้'));return}
+  const d=new Date(),ds=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  const clean=r=>{const o=Object.assign({},r);return o};
+  let name,data;
+  if(k==='json'){name='jp-home-air-backup-'+ds+'.json';data=JSON.stringify({exportedAt:d.toISOString(),settings:S.settings,products:S.products,purchases:S.purchases,sales:S.sales},null,1)}
+  else{
+    const rows=(S[k]||[]).map(clean);
+    const keys=[...new Set(rows.flatMap(r=>Object.keys(r)))];
+    const q=v=>{v=v==null?'':String(v);return /[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
+    if(!rows.length){toast('—');return}
+    name='jp-home-air-'+k+'-'+ds+'.csv';data='\ufeff'+[keys.join(',')].concat(rows.map(r=>keys.map(c=>q(r[c])).join(','))).join('\r\n')
+  }
+  try{await dl.save({filename:name,data});toast(tr('บันทึกไฟล์แล้ว'))}catch(e){if(!e||e.code!=='declined')toast(tr('ดาวน์โหลดไม่ได้ในหน้านี้'))}
+}
+function toast(t){const el=$('#toast');el.textContent=t;el.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(()=>{el.hidden=true},2200)}
+function shopTitle(){return S.settings.shopName||''+tr('ร้านแอร์')+''}
+
+/* ---------- data helpers ---------- */
+const snapArr=s=>s.docs.map(d=>Object.assign({id:d.id},d.data()));
+function avgCost(pid){let q=0,k=0,b=0;for(const p of S.purchases)if(p.productId===pid){q+=p.qty;k+=p.qty*(p.costKip||0);b+=p.qty*(p.costBaht||0)}return q?{kip:k/q,baht:b/q}:{kip:0,baht:0}}
+const prod=id=>S.products.find(p=>p.id===id);
+const inP=d=>d&&(S.mode==='month'?d.startsWith(S.period):d.startsWith(S.year));
+const monthKey=(y,m)=>y+'-'+pad(m);
+function sumMonth(key){let sk=0,pk=0;for(const s of S.sales)if(s.date&&s.date.startsWith(key))sk+=s.qty*s.priceKip;for(const p of S.purchases)if(p.date&&p.date.startsWith(key))pk+=p.qty*p.costKip;return{sales:sk,buy:pk}}
+
+/* ---------- render ---------- */
+let raf=0;
+function render(){cancelAnimationFrame(raf);raf=requestAnimationFrame(draw)}
+function draw(){
+  $('#shopName').textContent=shopTitle();
+  {const lid=S.settings.markId||S.settings.logoId,im=$('#logoMark'),sv=$('#logoSvg');if(lid)im.src=imgUrl(lid);im.toggleAttribute('hidden',!lid);sv.toggleAttribute('hidden',!!lid)}
+  document.title=shopTitle();
+  document.documentElement.lang=L();
+  {const vb=$('#viewSeg').querySelectorAll('button');vb[0].textContent=tr('หน้าร้าน');vb[1].textContent=tr('หลังบ้าน');$('#viewSeg').setAttribute('aria-label',tr('โหมด'));const xb=$('#modal .x');if(xb)xb.setAttribute('aria-label',tr('ปิด'));
+   $('#langWrap').hidden=S.view==='admin';const sl=shopLang();$('#langBtn').textContent=sl.toUpperCase();$('#langBtn').setAttribute('aria-label',tr('ภาษา'));
+   $('#langMenu').innerHTML=Object.keys(LANGNAMES).map(c=>'<button data-act="setlang" data-l="'+c+'" aria-pressed="'+(c===sl)+'"><b>'+c.toUpperCase()+'</b><span>'+LANGNAMES[c]+'</span></button>').join('');}
+  const seg=$('#viewSeg');seg.hidden=!S.canEdit;{const lb=$('#loginBtn');lb.hidden=!!S.canEdit;lb.textContent=tr('เข้าสู่ระบบ')}
+  if(!S.canEdit&&S.view==='admin')S.view='shop';
+  seg.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.v===S.view)));
+  if(S.view==='admin'&&S.canEdit&&S.settings.pinHash&&!S.unlocked){drawLock();return}
+  if(S.view==='admin'&&S.canEdit){
+    const a=document.activeElement;
+    if((S.tab==='set'||S.tab==='his')&&a&&$('#app').contains(a)&&/INPUT|TEXTAREA/.test(a.tagName)){if(S.tab==='his')drawHist();return}
+    drawAdmin();
+  } else drawShop();
+}
+
+/* storefront */
+async function submitPin(f){
+  const err=$('#pinErr');err.textContent='';
+  const n1=f.elements.n1.value,n2=f.elements.n2.value;
+  try{
+    if(S.settings.pinHash&&await sha(f.elements.old.value)!==S.settings.pinHash){err.textContent=tr('รหัสผ่านปัจจุบันไม่ถูกต้อง');return}
+    if(n1.length<4){err.textContent=tr('รหัสผ่านสั้นเกินไป (อย่างน้อย 4 ตัว)');return}
+    if(n1!==n2){err.textContent=tr('รหัสผ่านใหม่ไม่ตรงกัน');return}
+    const h=await sha(n1);
+    await S.db.doc('settings/main').set(Object.assign({},S.settings,{pinHash:h}));
+    S.unlocked=true;try{sessionStorage.setItem('ac_unlock',h)}catch(e){}
+    f.reset();toast(tr('เปลี่ยนรหัสผ่านแล้ว'));
+  }catch(e){err.textContent=tr('บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง')}
+}
+/* lock screen */
+async function sha(t){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('jp:'+t));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
+let pinFails=0,pinBlock=0;
+function drawLock(){
+  if($('#fLock')&&$('#app').contains($('#fLock')))return;
+  $('#app').innerHTML='<section class="page"><div class="bar"><h2>'+tr('เข้าสู่ระบบหลังบ้าน')+'</h2></div><div class="panel"><form class="form" id="fLock" autocomplete="off"><div class="note">'+tr('ใส่รหัสผ่านเพื่อเข้าหลังบ้าน')+'</div><label>'+tr('รหัสผ่าน')+'<input name="pin" type="password" autocomplete="current-password" required></label><div class="err" id="lockErr"></div><div class="bar" style="gap:8px;flex-wrap:wrap"><button class="btn primary" type="submit">'+tr('เข้าสู่ระบบ')+'</button><button class="btn ghost" type="button" data-act="view" data-v="shop">'+tr('กลับหน้าร้าน')+'</button></div></form></div></section>';
+  setTimeout(()=>{const i=$('#fLock input');if(i)i.focus()},50);
+}
+async function submitLock(f){
+  const err=$('#lockErr');err.textContent='';
+  if(Date.now()<pinBlock){err.textContent=tr('ลองผิดหลายครั้ง รอสักครู่แล้วลองใหม่');return}
+  let h='';try{h=await sha(f.elements.pin.value)}catch(e){}
+  if(h&&h===S.settings.pinHash){pinFails=0;S.unlocked=true;try{sessionStorage.setItem('ac_unlock',S.settings.pinHash)}catch(e){}render()}
+  else{pinFails++;f.elements.pin.value='';if(pinFails>=5){pinBlock=Date.now()+30000;pinFails=0;err.textContent=tr('ลองผิดหลายครั้ง รอสักครู่แล้วลองใหม่')}else err.textContent=tr('รหัสผ่านไม่ถูกต้อง')}
+}
+function drawShop(){
+  const s=S.settings;
+  const chips=[];
+  if(s.phone)chips.push('<a class="chip" href="tel:'+esc(String(s.phone).replace(/[^0-9+]/g,''))+'">'+tr('โทร')+' <b class="mono">'+esc(s.phone)+'</b></a>');
+  if(s.contact)chips.push('<span class="chip">'+tr('ติดต่อ')+' <b>'+esc(s.contact)+'</b></span>');
+  if(s.address)chips.push('<span class="chip">'+esc(s.address)+'</span>');
+  const brands=[...new Set(S.products.filter(p=>!p.hidden||S.canEdit).map(p=>(p.brand||'').trim()).filter(Boolean))].sort();
+  const n=cols();
+  $('#app').innerHTML='<section class="page">'+
+   '<div class="hero'+(s.logoId?' withlogo':'')+'">'+(s.logoId?'<div class="logocard"><img alt="'+esc(shopTitle())+'" src="'+esc(imgUrl(s.logoId))+'"></div>':'')+'<div class="herotxt"><span class="tagpill">'+esc(shopTitle())+' · '+tr('เครื่องปรับอากาศ')+'</span><h1>'+tr('แอร์คุณภาพ ราคาชัดเจน')+'</h1><p>'+esc(taglineText())+'</p>'+((s.whatsapp||s.phone)?'<div class="calllbl">'+tr('ติดต่อ หรือ ทักแชต :')+'</div>'+'<div class="callrow">'+(s.phone?'<a class="callbtn" href="tel:'+esc(String(s.phone).replace(/[^0-9+]/g,''))+'">☎ '+esc(s.phone)+'</a>':'')+(s.whatsapp?'<a class="callbtn wa" target="_blank" rel="noopener" href="https://wa.me/'+esc(String(s.whatsapp).replace(/[^0-9]/g,''))+'"><svg class="waic" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21l1.65-4.9A9 9 0 1 1 8 19.4z"/><g transform="translate(6.6 6.6) scale(.45)" fill="currentColor" stroke="none"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></g></svg> WhatsApp</a>':'')+'</div>':'')+((s.contact||s.address)?'<div class="contact">'+(s.contact?'<span class="chip">'+tr('ติดต่อ')+' <b>'+esc(s.contact)+'</b></span>':'')+(s.address?'<span class="chip">'+esc(s.address)+'</span>':'')+'</div>':'')+'</div></div>'+
+   
+   '<div class="tools"><label class="search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="qIn" type="search" placeholder="'+tr('ค้นหายี่ห้อ หรือรุ่น')+'" value="'+esc(S.q)+'" autocomplete="off"></label>'+
+   '<div class="rowtools"><div class="chips">'+['all',...brands].map(b=>'<button class="pill" data-act="brand" data-b="'+esc(b)+'" aria-pressed="'+(S.brand===b)+'">'+(b==='all'?''+tr('ทั้งหมด')+'':esc(b))+'</button>').join('')+'</div>'+
+   '<div class="cols"><span>'+tr('ต่อแถว')+'</span><div class="circ">'+[2,3,4,5,6].map(c=>'<button data-act="cols" data-n="'+c+'" aria-pressed="'+(n===c)+'" aria-label="'+tr('แสดง')+' '+c+' '+tr('รายการต่อแถว')+'">'+c+'</button>').join('')+'</div></div></div>'+
+   '<div class="bar"><div class="count" id="cnt"></div><select class="sel" id="sortSel" aria-label="'+tr('เรียงลำดับ')+'"><option value="new">'+tr('ใหม่ล่าสุด')+'</option><option value="asc">'+tr('ราคาต่ำ')+' → '+tr('สูง')+'</option><option value="desc">'+tr('ราคาสูง')+' → '+tr('ต่ำ')+'</option></select></div></div>'+
+   '<div id="grid"></div></section>';
+  $('#sortSel').value=S.sort;
+  drawGrid();
+}
+function drawGrid(){
+  const n=cols();
+  let list=S.products.filter(p=>S.canEdit||!p.hidden);
+  const q=S.q.trim().toLowerCase();
+  if(S.brand!=='all')list=list.filter(p=>(p.brand||'').trim()===S.brand);
+  if(q)list=list.filter(p=>[p.brand,p.name,p.btu,p.type,p.details].join(' ').toLowerCase().includes(q));
+  list=list.slice().sort((a,b)=>S.sort==='asc'?(a.priceKip||0)-(b.priceKip||0):S.sort==='desc'?(b.priceKip||0)-(a.priceKip||0):(b.createdAt||'').localeCompare(a.createdAt||''));
+  $('#cnt').textContent=list.length+' '+tr('รุ่น');
+  const g=$('#grid');
+  if(!S.loaded){g.innerHTML='<div class="empty"><b>'+(S.dbOff?''+tr('ยังโหลดข้อมูลไม่ได้')+'':S.slow?''+tr('โหลดช้ากว่าปกติ')+'':''+tr('กำลังโหลดสินค้า')+'…')+'</b>'+(S.dbOff?''+tr('เปิดหน้านี้ผ่านลิงก์ที่ได้รับสิทธิ์เข้าดู แล้วลองใหม่')+'':''+tr('รอสักครู่')+'')+'</div>';return}
+  if(!list.length){g.innerHTML='<div class="empty"><b>'+(S.products.length?''+tr('ไม่พบสินค้าที่ค้นหา')+'':''+tr('ยังไม่มีสินค้า')+'')+'</b>'+(S.canEdit&&!S.products.length?''+tr('ไปที่หลังบ้านแท็บรับเข้าเพื่อเพิ่มสินค้าชิ้นแรก')+'':'')+'</div>';return}
+  g.innerHTML='<div class="grid" style="--cols:'+n+';--gap:'+(n>=5?8:n===4?10:14)+'px">'+list.map(p=>card(p)).join('')+'</div>';
+}
+function inStock(p){return p.avail==='in'?true:p.avail==='out'?false:(p.stock||0)>0}
+function stockBadge(p,adm){const s=p.stock||0;if(!adm)return inStock(p)?'<span class="badge">'+tr('มีของ')+'</span>':'<span class="badge zero">'+tr('สินค้าหมด')+'</span>';return !inStock(p)?'<span class="badge zero">'+tr('สินค้าหมด')+'</span>':s>0&&s<=2&&!p.avail?'<span class="badge low">'+tr('เหลือน้อย')+'</span>':'<span class="badge">'+tr('มีของ')+'</span>';return s<=0?'<span class="badge zero">'+tr('สินค้าหมด')+'</span>':s<=2?'<span class="badge low">'+tr('เหลือน้อย')+'</span>':'<span class="badge">'+tr('มีของ')+'</span>'}
+function specs(p){return [p.btu?nf(p.btu)+' BTU':'',p.type||''].filter(Boolean).join(' · ')}
+function card(p,act,label){act=act||'open';
+  return '<article class="card'+((p.stock||0)<=0&&act!=='pickpur'&&!(act==='open'&&inStock(p))||(act==='open'&&!inStock(p))?' out':'')+'" data-act="'+act+'" data-id="'+esc(p.id)+'" tabindex="0" role="button" aria-label="'+esc((p.brand||'')+' '+(p.name||''))+'">'+
+  '<div class="ph">'+pic(p)+stockBadge(p,act!=='open')+(p.hidden?'<span class="badge hide">'+tr('ซ่อนอยู่')+'</span>':'')+'</div>'+
+  '<div class="cb"><div class="brand">'+esc(p.brand)+'</div><h3>'+esc(p.name)+'</h3>'+(specs(p)?'<div class="specs">'+esc(specs(p))+'</div>':'')+
+  '<div class="price">'+kip(p.priceKip)+'</div><div class="pb">'+baht(p.priceBaht)+'</div>'+
+  '<div class="cf sep"><span>'+(act==='open'?'':tr('คงเหลือ')+' <b>'+nf(p.stock)+'</b>')+'</span><span class="more">'+(label||''+tr('รายละเอียดเพิ่มเติม')+' ›')+'</span></div></div></article>';
+}
+function colsBar(){const n=cols();return '<div class="cols"><span>'+tr('ต่อแถว')+'</span><div class="circ">'+[2,3,4,5,6].map(c=>'<button data-act="cols" data-n="'+c+'" aria-pressed="'+(n===c)+'" aria-label="'+tr('แสดง')+' '+c+' '+tr('รายการต่อแถว')+'">'+c+'</button>').join('')+'</div></div>'}
+function adminGrid(list,act,labelFn,first){const n=cols();return '<div class="grid" style="--cols:'+n+';--gap:'+(n>=5?8:n===4?10:14)+'px">'+(first||'')+list.map(p=>card(p,act,labelFn(p))).join('')+'</div>'}
+function newTile(){return '<article class="card newtile" data-act="newpur" data-id="__new" tabindex="0" role="button" aria-label="'+tr('เพิ่มสินค้าใหม่')+'"><div class="ph"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M12 4v16M4 12h16"/></svg></div><div class="cb"><h3>'+tr('เพิ่มสินค้าใหม่')+'</h3><div class="specs">'+tr('รุ่นที่ยังไม่เคยรับเข้า')+'</div></div></article>'}
+function openDetail(id){
+  const p=prod(id);if(!p)return;
+  const s=S.settings;
+  openModal(esc(p.brand)+' '+esc(p.name),
+   '<div class="detail-img">'+pic(p)+'</div>'+
+   '<div class="bar" style="align-items:flex-end"><div><div class="price" style="margin-top:0">'+kip(p.priceKip)+'</div><div class="pb">'+baht(p.priceBaht)+'</div></div><div>'+stockBadge(p).replace('badge','tag').replace(/class="tag (\w+)"/,'class="tag"')+'</div></div>'+
+   (specs(p)?'<p class="specs" style="margin:10px 0 0">'+esc(specs(p))+'</p>':'')+
+   '<h4 style="margin:16px 0 6px">'+tr('รายละเอียด')+'</h4><div class="pre">'+(p.details?esc(p.details):'<span class="note">'+tr('ยังไม่มีรายละเอียดเพิ่มเติม')+'</span>')+'</div>'+
+   ((s.phone||s.contact)?'<div class="contact" style="margin-top:16px">'+(s.phone?'<span class="chip"><a class="tel" href="tel:'+esc(String(s.phone).replace(/[^0-9+]/g,''))+'">'+tr('โทร')+' <b class="mono">'+esc(s.phone)+'</b></a> <button class="btn sm ghost" data-act="copy" data-t="'+esc(s.phone)+'">'+tr('คัดลอก')+'</button></span>':'')+(s.contact?'<span class="chip">'+tr('ติดต่อ')+' <b>'+esc(s.contact)+'</b></span>':'')+'</div>':''));
+}
+
+/* admin */
+function drawAdmin(){
+  const tabs=[['sum',''+tr('สรุป')+''],['in',''+tr('รับเข้า')+''],['out',''+tr('ขายออก')+''],['his',''+tr('ประวัติ')+''],['set',''+tr('ตั้งค่า')+'']];
+  const body=S.tab==='sum'?tabSummary():S.tab==='in'?tabIn():S.tab==='out'?tabOut():S.tab==='his'?tabHis():tabSet();
+  $('#app').innerHTML='<section class="page"><div class="seg tabs" role="tablist">'+tabs.map(t=>'<button role="tab" data-act="tab" data-t="'+t[0]+'" aria-pressed="'+(S.tab===t[0])+'">'+t[1]+'</button>').join('')+'</div>'+body+'</section>';
+  if(S.tab==='his')drawHist(true);
+  if(S.tab==='set'){const sf=$('#fSet');if(sf)bindImage(sf)}
+}
+function tabSummary(){
+  const m=S.mode==='month';
+  const sales=S.sales.filter(s=>inP(s.date)),buys=S.purchases.filter(p=>inP(p.date));
+  const sQ=sales.reduce((t,s)=>t+s.qty,0),bQ=buys.reduce((t,p)=>t+p.qty,0);
+  const sK=sales.reduce((t,s)=>t+s.qty*s.priceKip,0),sB=sales.reduce((t,s)=>t+s.qty*(s.priceBaht||0),0);
+  const bK=buys.reduce((t,p)=>t+p.qty*p.costKip,0),bB=buys.reduce((t,p)=>t+p.qty*(p.costBaht||0),0);
+  const prof=sales.reduce((t,s)=>t+s.qty*(s.priceKip-(s.costKip||0)),0);
+  const margin=sK?prof/sK*100:0;
+  const stockCost=S.products.reduce((t,p)=>t+(p.stock||0)*avgCost(p.id).kip,0);
+  const stockSell=S.products.reduce((t,p)=>t+(p.stock||0)*(p.priceKip||0),0);
+  const stockQ=S.products.reduce((t,p)=>t+(p.stock||0),0);
+  let nav;
+  if(m){const [y,mo]=S.period.split('-');nav='<div class="pnav"><button class="nb" data-act="prev" aria-label="'+tr('ก่อนหน้า')+'">‹</button><label class="pick"><span><small>'+S.period+'</small><b>'+TM[+mo-1]+' '+y+'</b></span><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><input id="pm" type="month" value="'+S.period+'" aria-label="'+tr('เลือกเดือน')+'"></label><button class="nb" data-act="next" aria-label="'+tr('ถัดไป')+'">›</button><button class="btn" data-act="now">'+tr('เดือนนี้')+'</button></div>'}
+  else{const cy=+today().slice(0,4);const ys=[];for(let y=cy-5;y<=cy+1;y++)ys.push(y);nav='<div class="pnav"><button class="nb" data-act="prev" aria-label="'+tr('ก่อนหน้า')+'">‹</button><label class="pick"><span><small>'+tr('ทั้งปี')+'</small><b>'+tr('ปี')+' '+S.year+'</b></span><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><select id="py" aria-label="'+tr('เลือกปี')+'">'+ys.map(y=>'<option'+(String(y)===S.year?' selected':'')+'>'+y+'</option>').join('')+'</select></label><button class="nb" data-act="next" aria-label="'+tr('ถัดไป')+'">›</button><button class="btn" data-act="now">'+tr('ปีนี้')+'</button></div>'}
+  const per=SP()+(m?tr('ของเดือน'):tr('ของปี'));
+  // top models
+  const by={};for(const s of sales){by[s.productId]=(by[s.productId]||0)+s.qty}
+  const top=Object.entries(by).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const low=S.products.filter(p=>(p.stock||0)<=2).sort((a,b)=>(a.stock||0)-(b.stock||0)).slice(0,6);
+  return '<div class="seg sm" style="align-self:stretch"><button data-act="mode" data-m="month" aria-pressed="'+m+'">'+tr('รายเดือน')+'</button><button data-act="mode" data-m="year" aria-pressed="'+!m+'">'+tr('รายปี')+'</button></div>'+nav+
+  '<div class="kpis">'+
+   '<div class="kpi"><div class="kl"><i class="dot"></i>'+tr('ขายออก')+'</div><div class="kv">'+nf(sQ)+' <small>'+tr('เครื่อง')+'</small></div><div class="ks">'+sales.length+' '+tr('รายการขาย')+'</div></div>'+
+   '<div class="kpi"><div class="kl"><i class="dot in"></i>'+tr('รับเข้า')+'</div><div class="kv">'+nf(bQ)+' <small>'+tr('เครื่อง')+'</small></div><div class="ks">'+buys.length+' '+tr('รายการรับเข้า')+'</div></div>'+
+   '<div class="kpi"><div class="kl"><i class="dot"></i>'+tr('ยอดขายรวม')+'</div><div class="kv">'+kip(sK)+'</div><div class="ks">'+tr('ราคาขายทั้งหมด')+''+per+' · <span class="mono">'+baht(sB)+'</span></div></div>'+
+   '<div class="kpi"><div class="kl"><i class="dot in"></i>'+tr('ซื้อเข้ารวม')+'</div><div class="kv">'+kip(bK)+'</div><div class="ks">'+tr('ราคาซื้อทั้งหมด')+''+per+' · <span class="mono">'+baht(bB)+'</span></div></div>'+
+  '</div>'+
+  '<div class="profit"><div><div class="ks">'+tr('กำไรขั้นต้นจากที่ขาย คือยอดขายหักต้นทุนเฉลี่ยของรุ่นนั้น')+'</div><div class="kv'+(prof<0?' neg':'')+'">'+(prof<0?'−':'')+kip(Math.abs(prof))+'</div></div><div class="ks">'+tr('อัตรากำไร')+' <b class="mono" style="color:var(--fg)">'+margin.toFixed(1)+'%</b></div></div>'+
+  chartPanel()+
+  '<div class="two"><div class="panel"><header><h2>'+tr('รุ่นขายดี')+SP()+(m?''+tr('เดือนนี้')+'':''+tr('ปีนี้')+'')+'</h2></header>'+
+   (top.length?'<div class="list">'+top.map(([id,q])=>{const p=prod(id)||{};return '<div class="li"><div class="th">'+pic(p)+'</div><div class="m"><b>'+esc(p.name||'('+tr('ลบแล้ว')+')')+'</b><span>'+esc(p.brand||'')+'</span></div><div class="r"><b>'+nf(q)+' '+tr('เครื่อง')+'</b></div></div>'}).join('')+'</div>':'<div class="empty">'+tr('ยังไม่มีรายการขายในช่วงนี้')+'</div>')+'</div>'+
+  '<div class="panel"><header><h2>'+tr('สต็อกคงเหลือ')+'</h2><span class="tag in">'+nf(stockQ)+' '+tr('เครื่อง')+'</span></header>'+
+   '<div class="ks" style="margin-bottom:8px">'+tr('ต้นทุนรวม')+' <b class="mono" style="color:var(--fg)">'+kip(stockCost)+'</b> · '+tr('มูลค่าตามราคาขาย')+' <b class="mono" style="color:var(--fg)">'+kip(stockSell)+'</b></div>'+
+   (low.length?'<div class="list">'+low.map(p=>'<div class="li"><div class="th">'+pic(p)+'</div><div class="m"><b>'+esc(p.name)+'</b><span>'+esc(p.brand)+'</span></div><div class="r"><span class="tag '+((p.stock||0)<=0?'warn':'')+'">'+((p.stock||0)<=0?''+tr('หมดแล้ว')+'':''+tr('เหลือ')+' '+p.stock)+'</span></div></div>').join('')+'</div>':'<div class="empty">'+tr('สต็อกทุกรุ่นยังเพียงพอ')+'</div>')+'</div></div>';
+}
+function niceMax(v){if(v<=0)return 1e6;const e=Math.pow(10,Math.floor(Math.log10(v)));const f=v/e;return (f<=1?1:f<=2?2:f<=5?5:10)*e}
+function compact(n){if(n>=1e6){const v=n/1e6;return (v%1?v.toFixed(1):v.toFixed(0))+'M'}if(n>=1e3)return Math.round(n/1e3)+'k';return String(Math.round(n))}
+function chartPanel(){
+  const m=S.mode==='month';const pts=[];
+  if(m){let [y,mo]=S.period.split('-').map(Number);for(let i=5;i>=0;i--){let yy=y,mm=mo-i;while(mm<1){mm+=12;yy--}pts.push({k:monthKey(yy,mm),l:TS[mm-1],cur:i===0})}}
+  else{const y=+S.year;for(let i=1;i<=12;i++)pts.push({k:monthKey(y,i),l:TS[i-1],cur:false})}
+  pts.forEach(p=>Object.assign(p,sumMonth(p.k)));
+  const mx=niceMax(Math.max(...pts.map(p=>Math.max(p.sales,p.buy))));
+  const W=600,H=230,L=46,R=8,T=14,B=30,cw=W-L-R,ch=H-T-B,gw=cw/pts.length,bw=Math.min(22,gw*.32);
+  const y=v=>T+ch-(v/mx)*ch;
+  let g='';
+  for(let i=0;i<=4;i++){const v=mx*i/4,yy=y(v);g+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+yy+'" y2="'+yy+'" stroke="var(--line)" stroke-width="1" '+(i?'stroke-dasharray="3 4"':'')+'/><text x="'+(L-8)+'" y="'+(yy+4)+'" text-anchor="end" font-size="11" fill="var(--muted)" font-family="IBM Plex Mono,monospace">'+compact(v)+'</text>'}
+  pts.forEach((p,i)=>{
+    const cx=L+gw*i+gw/2,op=(m&&!p.cur)?.55:1;
+    const hs=(p.sales/mx)*ch,hb=(p.buy/mx)*ch;
+    g+='<g opacity="'+op+'"><title>'+p.l+' · '+tr('ขาย')+' '+kip(p.sales)+' · '+tr('ซื้อเข้า')+' '+kip(p.buy)+'</title>'+
+     '<rect x="'+(cx-bw-1.5)+'" y="'+(T+ch-hs)+'" width="'+bw+'" height="'+Math.max(hs,p.sales?2:0)+'" rx="4" fill="var(--accent)"/>'+
+     '<rect x="'+(cx+1.5)+'" y="'+(T+ch-hb)+'" width="'+bw+'" height="'+Math.max(hb,p.buy?2:0)+'" rx="4" fill="var(--in)"/></g>'+
+     '<text x="'+cx+'" y="'+(H-10)+'" text-anchor="middle" font-size="12" fill="'+(p.cur?'var(--fg)':'var(--muted)')+'" font-weight="'+(p.cur?600:400)+'">'+p.l+'</text>';
+  });
+  return '<div class="panel"><header><h2>'+(m?'6 '+tr('เดือนล่าสุด')+'':''+tr('รายเดือนในปี')+' '+S.year)+'</h2><div class="legend"><span><i class="dot"></i>'+tr('ยอดขาย')+'</span><span><i class="dot in"></i>'+tr('ซื้อเข้า')+'</span></div></header><div class="chartbox"><svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+tr('กราฟยอดขายและยอดซื้อเข้า หน่วยกีบ')+'">'+g+'</svg></div></div>';
+}
+const histSort=(a,b)=>(b.date||'').localeCompare(a.date||'')||(b.createdAt||'').localeCompare(a.createdAt||'');
+function purRow(r){const p=prod(r.productId)||{};return '<div class="li"><div class="th">'+pic(p)+'</div><div class="m"><b>'+esc(p.brand||'')+' '+esc(p.name||'('+tr('ลบแล้ว')+')')+'</b><span>'+fmtDate(r.date)+' · '+nf(r.qty)+' '+tr('เครื่อง')+' × '+kip(r.costKip)+' / '+baht(r.costBaht)+'</span></div><div class="r"><b>'+kip(r.qty*r.costKip)+'</b><span class="note">'+baht(r.qty*(r.costBaht||0))+'</span></div><div class="acts"><button class="btn sm danger" data-act="delpur" data-id="'+esc(r.id)+'" aria-label="'+tr('ลบ')+'">'+tr('ลบ')+'</button></div></div>'}
+function saleRow(r){const p=prod(r.productId)||{};const pf=r.qty*(r.priceKip-(r.costKip||0));return '<div class="li"><div class="th">'+pic(p)+'</div><div class="m"><b>'+esc(p.brand||'')+' '+esc(p.name||'('+tr('ลบแล้ว')+')')+'</b><span>'+fmtDate(r.date)+' · '+nf(r.qty)+' '+tr('เครื่อง')+' × '+kip(r.priceKip)+(r.customer?' · '+esc(r.customer):'')+'</span></div><div class="r"><b>'+kip(r.qty*r.priceKip)+'</b><span class="'+(pf<0?'dn':'up')+'">'+tr('กำไร')+' '+(pf<0?'−':'')+kip(Math.abs(pf))+'</span></div><div class="acts"><button class="btn sm danger" data-act="delsale" data-id="'+esc(r.id)+'">'+tr('ลบ')+'</button></div></div>'}
+function drawHist(init){
+  const h=S.hist;if(!h||!$('#hBody'))return;
+  const isIn=h.kind==='in',rows=isIn?S.purchases:S.sales;
+  const months=[...new Set(rows.map(r=>(r.date||'').slice(0,7)).filter(Boolean))].sort().reverse();
+  const sel=$('#hMonth');
+  if(init||sel.options.length!==months.length+1){
+    sel.innerHTML='<option value="all">'+tr('ทั้งหมด')+'</option>'+months.map(m=>'<option value="'+m+'">'+TM[+m.slice(5)-1]+' '+m.slice(0,4)+'</option>').join('');
+    sel.value=months.includes(h.month)?h.month:'all';h.month=sel.value;
+  }
+  let list=rows.filter(r=>h.month==='all'||(r.date||'').startsWith(h.month));
+  const q=h.q.trim().toLowerCase();
+  if(q)list=list.filter(r=>{const p=prod(r.productId)||{};return [p.brand,p.name,r.customer,r.note].join(' ').toLowerCase().includes(q)});
+  list.sort(histSort);
+  const tq=list.reduce((t,r)=>t+r.qty,0);
+  const tk=list.reduce((t,r)=>t+r.qty*(isIn?r.costKip:r.priceKip),0);
+  const tb=list.reduce((t,r)=>t+r.qty*((isIn?r.costBaht:r.priceBaht)||0),0);
+  const pf=isIn?0:list.reduce((t,r)=>t+r.qty*(r.priceKip-(r.costKip||0)),0);
+  $('#hBody').innerHTML='<div class="total" style="margin:14px 0 6px"><span>'+list.length+' '+tr('รายการ')+' · '+nf(tq)+' '+tr('เครื่อง')+'</span><b>'+kip(tk)+' · '+baht(tb)+'</b></div>'+(isIn?'':'<div class="note" style="margin-bottom:6px">'+tr('กำไรขั้นต้นรวม')+' <b class="'+(pf<0?'dn':'up')+'">'+(pf<0?'−':'')+kip(Math.abs(pf))+'</b></div>')+
+    (list.length?'<div class="list">'+list.map(isIn?purRow:saleRow).join('')+'</div>':'<div class="empty"><b>'+tr('ไม่พบรายการ')+'</b>'+tr('ลองเปลี่ยนเดือนหรือคำค้นหา')+'</div>');
+}
+function tabIn(){
+  return '<div class="bar"><h2>'+tr('รับเข้า')+'</h2>'+colsBar()+'</div><div class="note">'+tr('กดที่สินค้าเพื่อเพิ่มจำนวน พร้อมแก้ไขชื่อ รูป ราคา และรายละเอียดได้ในหน้าต่างเดียว หรือกดการ์ดเพิ่มสินค้าใหม่สำหรับรุ่นที่ยังไม่มี')+'</div>'+
+  adminGrid(S.products.slice().sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||'')),'pickpur',p=>'＋ '+tr('เพิ่มจำนวน')+'',newTile());
+}
+function tabOut(){
+  return '<div class="bar"><h2>'+tr('ขายออก')+'</h2>'+colsBar()+'</div>'+
+  (S.products.length?'<div class="note">'+tr('กดที่สินค้าที่มีของเพื่อบันทึกการขายได้ทันที สินค้าทั้งหมดมาจากหน้ารับเข้า')+'</div>'+adminGrid(S.products.slice().sort((a,b)=>((b.stock||0)>0)-((a.stock||0)>0)||(b.createdAt||'').localeCompare(a.createdAt||'')),'picksale',p=>(p.stock||0)>0?''+tr('ขาย')+' ›':''+tr('หมด')+''):'<div class="empty"><b>'+tr('ยังไม่มีสินค้า')+'</b>'+tr('รับสินค้าเข้าก่อนในแท็บรับเข้า')+'</div>');
+}
+function tabHis(){
+  if(!S.hist)S.hist={kind:'in',month:'all',q:''};
+  const h=S.hist;
+  return '<div class="bar"><h2>'+tr('ประวัติ')+'</h2></div>'+
+  '<div class="seg sm" style="align-self:stretch"><button data-act="hk" data-k="in" aria-pressed="'+(h.kind==='in')+'">'+tr('รับเข้า')+' ('+S.purchases.length+')</button><button data-act="hk" data-k="out" aria-pressed="'+(h.kind==='out')+'">'+tr('ขายออก')+' ('+S.sales.length+')</button></div>'+
+  '<div class="form"><div class="row2"><label>'+tr('เดือน')+'<select id="hMonth"></select></label><label>'+tr('ค้นหา')+'<input id="hQ" type="search" value="'+esc(h.q)+'" placeholder="'+tr('ยี่ห้อ รุ่น ลูกค้า')+'" autocomplete="off"></label></div></div>'+
+  '<div class="panel" id="hBody"></div>';
+}
+function tabSet(){
+  const s=S.settings;
+  return '<div class="panel"><header><h2>'+tr('ข้อมูลร้าน')+'</h2></header><form class="form" id="fSet">'+
+   '<label>'+tr('ชื่อร้าน')+'<input name="shopName" value="'+esc(s.shopName||'')+'" placeholder="'+tr('เช่น')+' TK Air Store"></label>'+
+   imgBlock({imageId:s.logoId},'โลโก้ร้าน')+
+   '<label>'+tr('คำโปรยใต้ชื่อร้าน')+'<input name="tagline" value="'+esc(s.tagline||'')+'"></label>'+
+   '<div class="row2"><label>'+tr('คำโปรยภาษาลาว')+'<input name="tagline_lo" value="'+esc(s.tagline_lo||'')+'"></label><label>'+tr('คำโปรยภาษาอังกฤษ')+'<input name="tagline_en" value="'+esc(s.tagline_en||'')+'"></label></div>'+
+   '<div class="row2"><label>'+tr('เบอร์โทร')+'<input name="phone" value="'+esc(s.phone||'')+'" inputmode="tel"></label><label>'+tr('ช่องทางติดต่อ')+' (Line / อื่นๆ)<input name="contact" value="'+esc(s.contact||'')+'"></label></div><div class="row2"><label>WhatsApp (+856...)<input name="whatsapp" value="'+esc(s.whatsapp||'')+'" inputmode="tel" placeholder="+8562099955447"></label></div>'+
+   '<label>'+tr('ที่อยู่ร้าน')+'<input name="address" value="'+esc(s.address||'')+'"></label>'+
+   '<div class="row2"><label>'+tr('อัตราแลกเปลี่ยน กีบต่อบาท')+'<input name="rate" type="number" min="1" value="'+esc(s.rate||714)+'" inputmode="numeric"></label><label>'+tr('จำนวนต่อแถวเริ่มต้นหน้าร้าน')+'<select name="cols">'+[2,3,4,5,6].map(c=>'<option'+(c===(+s.cols||2)?' selected':'')+'>'+c+'</option>').join('')+'</select></label></div>'+
+   '<div class="row2"><label>'+tr('ภาษาหลังบ้าน')+'<select id="alangSel">'+langOpts(S.alang||'th')+'</select></label><label>'+tr('ภาษาเริ่มต้นหน้าร้าน')+'<select name="lang">'+langOpts(S.settings.lang||'th')+'</select></label></div>'+
+   '<div class="note">'+tr('อัตราแลกเปลี่ยนใช้คำนวณช่องราคาบาทให้อัตโนมัติเวลากรอกราคากีบ แก้ทับได้ทุกครั้ง')+'</div><div class="err" id="setErr"></div>'+
+   '<button class="btn primary" type="submit">'+tr('บันทึกการตั้งค่า')+'</button></form></div>'+
+  '<div class="panel"><header><h2>'+tr('เครื่องมือ')+'</h2></header><div class="bar"><span class="note" style="flex:1;min-width:200px">'+tr('คำนวณจำนวนคงเหลือของทุกรุ่นใหม่จากประวัติรับเข้าและขายออก ใช้เมื่อตัวเลขคงเหลือไม่ตรง')+'</span><button class="btn" data-act="recalc">'+tr('คำนวณสต็อกใหม่')+'</button></div>'+'<div class="bar" style="gap:8px;flex-wrap:wrap"><button class="btn" data-act="logout">'+tr('ออกจากระบบ')+'</button>'+(S.products.length?'':'<button class="btn" data-act="seed">'+tr('นำเข้าข้อมูลเดิม')+'</button>')+'</div></div>'+
+  '<div class="panel"><header><h2>'+tr('สำรองข้อมูล')+'</h2></header><div class="note">'+tr('ดาวน์โหลดข้อมูลทั้งหมดเก็บไว้เป็นไฟล์ เผื่อข้อมูลหายหรือถูกลบผิด ไฟล์มีราคาทุนด้วย เก็บให้ปลอดภัย')+'</div><div class="bar" style="flex-wrap:wrap;gap:8px"><button class="btn primary" data-act="bk" data-k="json">'+tr('ไฟล์สำรองทั้งหมด')+'</button><button class="btn" data-act="bk" data-k="products">'+tr('สินค้า CSV')+'</button><button class="btn" data-act="bk" data-k="purchases">'+tr('รับเข้า CSV')+'</button><button class="btn" data-act="bk" data-k="sales">'+tr('ขายออก CSV')+'</button></div></div>'+
+  '<div class="note">'+tr('ข้อมูลราคาซื้อเข้า ประวัติรับเข้า และประวัติขาย อ่านได้เฉพาะผู้มีสิทธิ์แก้ไขของหน้านี้ ผู้เข้าชมทั่วไปเห็นเพียงสินค้า ราคาขาย และจำนวนคงเหลือ')+'</div>';
+}
+
+/* ---------- modal ---------- */
+function openModal(title,html){$('#mt').innerHTML=title;$('#mb').innerHTML=html;$('#modal').hidden=false;$('#modal .sheet').scrollTop=0}
+function closeModal(){$('#modal').hidden=true;$('#mb').innerHTML=''}
+
+function prodFields(p){p=p||{};return ''+
+ '<div class="row2"><label>'+tr('ยี่ห้อ')+'<input name="brand" value="'+esc(p.brand||'')+'" placeholder="'+tr('เช่น')+' HATARI"></label><label>'+tr('ชื่อรุ่น')+'<input name="name" value="'+esc(p.name||'')+'" placeholder="'+tr('ชื่อรุ่น')+'"></label></div>'+
+ '<div class="row2"><label>'+tr('ขนาด')+' BTU<input name="btu" type="number" inputmode="numeric" value="'+esc(p.btu||'')+'" placeholder="12000"></label><label>'+tr('ประเภท')+'<input name="type" list="types" value="'+esc(p.type||'')+'" placeholder="Inverter"><datalist id="types"><option>Inverter</option><option>'+tr('ธรรมดา')+' (Fixed speed)</option><option>'+tr('ติดผนัง')+'</option><option>'+tr('ตู้ตั้งพื้น')+'</option><option>'+tr('ฝังฝ้า')+'</option></datalist></label></div>'+
+ '<label>'+tr('สถานะหน้าร้าน')+'<select name="avail"><option value="">'+tr('อัตโนมัติ (ตามสต็อก)')+'</option><option value="in"'+(p.avail==='in'?' selected':'')+'>'+tr('แสดงว่ามีของ')+'</option><option value="out"'+(p.avail==='out'?' selected':'')+'>'+tr('แสดงว่าสินค้าหมด')+'</option></select></label>'+
+ '<label>'+tr('รายละเอียดที่แสดงหน้าร้าน')+'<textarea name="details" placeholder="'+tr('รับประกัน ระบบน้ำยา ฟังก์ชัน ฯลฯ')+'">'+esc(p.details||'')+'</textarea></label>'+
+ '';
+}
+function imgBlock(p,label){p=p||{};
+  const gal='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="M4 18l5-5 4 4 3-3 4 4"/></svg>';
+  const cam='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>';
+  return '<div><div class="note" style="margin-bottom:6px;font-weight:500">'+tr(label||'รูปสินค้า')+'</div><div class="imgup"><div class="th" id="imgPrev">'+pic(p)+'</div><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:8px"><div class="imgbtns"><label class="btn sm">'+gal+''+tr('เลือกจากแกลเลอรี')+'<input type="file" id="imgFile" accept="image/*" hidden></label><label class="btn sm">'+cam+''+tr('ถ่ายรูปสด')+'<input type="file" id="imgCam" accept="image/*" capture="environment" hidden></label><button class="btn sm ghost" type="button" id="imgDel">'+tr('ลบรูป')+'</button></div><input type="hidden" name="imageId" value="'+esc(p.imageId||'')+'"><div class="note" id="imgSt"></div></div></div></div>';
+}
+function bindImage(f){
+  const pick=async(inp)=>{
+    const file=inp.files&&inp.files[0];if(!file)return;
+    const st=$('#imgSt');st.textContent=''+tr('กำลังอัปโหลด')+'…';uploading=true;
+    try{
+      const as=await claude.use('assets');if(!as)throw new Error('no');
+      const bmp=await createImageBitmap(file);const r=Math.min(1,640/Math.max(bmp.width,bmp.height));
+      const c=document.createElement('canvas');c.width=Math.round(bmp.width*r);c.height=Math.round(bmp.height*r);
+      const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(bmp,0,0,c.width,c.height);
+      const blob=await new Promise(res=>c.toBlob(res,'image/jpeg',.78));
+      const up=await as.upload(blob,{type:'image/jpeg'});
+      f.elements.imageId.value=up.id;$('#imgPrev').innerHTML='<img alt="" src="'+esc(up.url)+'">';st.textContent=''+tr('อัปโหลดแล้ว')+'';
+    }catch(e){st.textContent=''+tr('อัปโหลดไม่สำเร็จ ลองรูปอื่นหรือลองใหม่')+''}
+    uploading=false;inp.value='';
+  };
+  ['#imgFile','#imgCam'].forEach(q=>{const el=$(q);if(el)el.addEventListener('change',()=>pick(el))});
+  const rm=$('#imgDel');if(rm)rm.addEventListener('click',()=>{f.elements.imageId.value='';$('#imgPrev').innerHTML=acSvg;$('#imgSt').textContent=''+tr('ลบรูปแล้ว จะมีผลเมื่อกดบันทึก')+''});
+}
+function autoBaht(f,kipName,bahtName){
+  const k=f.elements[kipName],b=f.elements[bahtName];
+  b.addEventListener('input',()=>{b.dataset.t=b.value?'1':''});
+  k.addEventListener('input',()=>{if(!b.dataset.t){const r=+S.settings.rate||714;b.value=k.value?Math.round(+k.value/r):''}});
+}
+function purForm(pid){
+  const opts=S.products.map(p=>'<option value="'+esc(p.id)+'">'+esc(p.brand)+' '+esc(p.name)+' · '+tr('คงเหลือ')+' '+nf(p.stock)+'</option>').join('');
+  openModal(''+tr('รับสินค้าเข้า')+'','<form class="form" id="fPur"><label>'+tr('สินค้า')+'<select name="pid" id="pPid"><option value="__new">＋ '+tr('สินค้าใหม่')+'</option>'+opts+'</select></label>'+
+   '<h4>'+tr('ข้อมูลสินค้า')+' <span class="note">'+tr('แก้ไขตรงนี้ได้เลย')+'</span></h4><div class="form" id="newF">'+prodFields()+'</div>'+imgBlock()+'<div id="exOpt" class="form" hidden><label style="flex-direction:row;align-items:center;gap:10px"><input type="checkbox" name="hidden" style="width:auto"> '+tr('ซ่อนจากหน้าร้าน')+'</label><div class="bar"><span class="note" id="exNote"></span><button class="btn sm danger" type="button" id="exDel" data-act="delprod" data-id="">'+tr('ลบสินค้า')+'</button></div></div>'+
+   '<div class="row2"><label>'+tr('วันที่รับเข้า')+'<input type="date" name="date" value="'+today()+'" required></label><label>'+tr('จำนวน')+' ('+tr('เครื่อง')+')<input type="number" name="qty" min="1" step="1" inputmode="numeric" value="1" required></label></div>'+
+   '<h4>'+tr('ราคาซื้อเข้าต่อเครื่อง')+' <span class="tag in">'+tr('เห็นเฉพาะหลังบ้าน')+'</span></h4>'+
+   '<div class="row2"><label>'+tr('เงินกีบ')+' ₭<input type="number" name="costKip" min="0" inputmode="numeric" placeholder="1500000" required></label><label>'+tr('เงินบาท')+' ฿<input type="number" name="costBaht" min="0" inputmode="numeric" placeholder="2100"></label></div>'+
+   '<h4>'+tr('ราคาขายที่แสดงหน้าร้านต่อเครื่อง')+' <span class="tag">'+tr('ลูกค้าเห็น')+'</span></h4>'+
+   '<div class="row2"><label>'+tr('เงินกีบ')+' ₭<input type="number" name="priceKip" min="0" inputmode="numeric" placeholder="2000000" required></label><label>'+tr('เงินบาท')+' ฿<input type="number" name="priceBaht" min="0" inputmode="numeric" placeholder="2800"></label></div>'+
+   '<div class="total"><span>'+tr('รวมซื้อเข้า')+'</span><b id="pTot">₭0 · ฿0</b></div><div class="err" id="pErr"></div>'+
+   '<button class="btn primary" type="submit">'+tr('บันทึกการรับเข้า')+'</button></form>');
+  const f=$('#fPur');bindImage(f);autoBaht(f,'costKip','costBaht');autoBaht(f,'priceKip','priceBaht');
+  const upd=()=>{const q=+f.qty.value||0;$('#pTot').textContent=kip(q*(+f.costKip.value||0))+' · '+baht(q*(+f.costBaht.value||0))};
+  f.addEventListener('input',upd);
+  $('#pPid').addEventListener('change',()=>{
+    const id=f.pid.value,isNew=id==='__new';{const cp=isNew?null:prod(id);const g=k=>cp?(cp[k]||''):'';f.brand.value=g('brand');f.elements.name.value=g('name');f.btu.value=g('btu');f.type.value=g('type');f.details.value=g('details');f.elements.avail.value=g('avail');f.imageId.value=g('imageId');$('#imgPrev').innerHTML=pic(cp);$('#exOpt').hidden=isNew;if(cp){f.elements.hidden.checked=!!cp.hidden;const used=S.purchases.some(r=>r.productId===id)||S.sales.some(r=>r.productId===id);$('#exDel').dataset.id=id;$('#exDel').hidden=used;$('#exNote').textContent=used?''+tr('มีประวัติรับเข้าหรือขายแล้ว จึงลบสินค้าไม่ได้ ให้ใช้ตัวเลือกซ่อนจากหน้าร้านแทน')+'':''}}
+    if(!isNew){const p=prod(id),ac=avgCost(id);f.priceKip.value=p.priceKip||'';f.priceBaht.value=p.priceBaht||'';f.priceBaht.dataset.t='1';f.costKip.value=Math.round(ac.kip)||'';f.costBaht.value=Math.round(ac.baht)||'';f.costBaht.dataset.t='1'}
+    upd();
+  });
+  if(pid&&pid!=='__new'&&prod(pid)){f.pid.value=pid;f.pid.dispatchEvent(new Event('change'))}
+}
+async function submitPur(f){
+  const err=$('#pErr');err.textContent='';
+  if(uploading){err.textContent=''+tr('รอรูปอัปโหลดให้เสร็จก่อน')+'';return}
+  const isNew=f.pid.value==='__new',qty=Math.round(+f.qty.value),cK=+f.costKip.value,cB=+f.costBaht.value||0,pK=+f.priceKip.value,pB=+f.priceBaht.value||0;
+  if(!(qty>0)){err.textContent=''+tr('ใส่จำนวนอย่างน้อย')+' 1 '+tr('เครื่อง')+'';return}
+  if(!f.brand.value.trim()||!f.elements.name.value.trim()){err.textContent=''+tr('ใส่ยี่ห้อและชื่อรุ่น')+'';return}
+  if(!(cK>=0)||f.costKip.value===''){err.textContent=''+tr('ใส่ราคาซื้อเข้าเป็นเงินกีบ')+'';return}
+  if(f.priceKip.value===''){err.textContent=''+tr('ใส่ราคาขายหน้าร้านเป็นเงินกีบ')+'';return}
+  const btn=f.querySelector('[type=submit]');btn.disabled=true;
+  try{
+    const now=new Date().toISOString();let pid=f.pid.value;
+    if(isNew){
+      pid=S.db.collection('products').doc().id;
+      await S.db.doc('products/'+pid).set({brand:f.brand.value.trim(),name:f.elements.name.value.trim(),btu:+f.btu.value||0,type:f.type.value.trim(),details:f.details.value.trim(),imageId:f.imageId.value,priceKip:pK,priceBaht:pB,stock:qty,avail:f.elements.avail.value,hidden:false,createdAt:now});
+    }else{
+      const p=prod(pid);await S.db.doc('products/'+pid).update({stock:(p.stock||0)+qty,priceKip:pK,priceBaht:pB,imageId:f.imageId.value,brand:f.brand.value.trim(),name:f.elements.name.value.trim(),btu:+f.btu.value||0,type:f.type.value.trim(),details:f.details.value.trim(),avail:f.elements.avail.value,hidden:f.elements.hidden.checked});
+    }
+    await S.db.collection('purchases').doc().set({productId:pid,date:f.date.value,qty,costKip:cK,costBaht:cB,createdAt:now});
+    closeModal();toast(''+tr('บันทึกการรับเข้าแล้ว')+'');
+  }catch(e){err.textContent=''+tr('บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง')+'';btn.disabled=false}
+}
+function saleForm(pid){
+  const av=S.products.filter(p=>(p.stock||0)>0);
+  openModal(''+tr('บันทึกการขาย')+'','<form class="form" id="fSale"><label>'+tr('สินค้า')+'<select name="pid">'+av.map(p=>'<option value="'+esc(p.id)+'">'+esc(p.brand)+' '+esc(p.name)+' · '+tr('เหลือ')+' '+nf(p.stock)+'</option>').join('')+'</select></label>'+
+   '<div class="row2"><label>'+tr('วันที่ขาย')+'<input type="date" name="date" value="'+today()+'" required></label><label>'+tr('จำนวน')+' ('+tr('เครื่อง')+')<input type="number" name="qty" min="1" step="1" value="1" inputmode="numeric" required></label></div>'+
+   '<h4>'+tr('ราคาที่ขายจริงต่อเครื่อง')+'</h4><div class="row2"><label>'+tr('เงินกีบ')+' ₭<input type="number" name="priceKip" min="0" inputmode="numeric" required></label><label>'+tr('เงินบาท')+' ฿<input type="number" name="priceBaht" min="0" inputmode="numeric"></label></div>'+
+   '<div class="row2"><label>'+tr('ชื่อลูกค้า')+' ('+tr('ไม่บังคับ')+')<input name="customer"></label><label>'+tr('หมายเหตุ')+' ('+tr('ไม่บังคับ')+')<input name="note"></label></div>'+
+   '<div class="total"><span id="sInfo">—</span><b id="sTot">₭0</b></div><div class="err" id="sErr"></div><button class="btn primary" type="submit">'+tr('บันทึกการขาย')+'</button></form>');
+  const f=$('#fSale');autoBaht(f,'priceKip','priceBaht');
+  const upd=()=>{const p=prod(f.pid.value);const q=+f.qty.value||0;const ac=p?avgCost(p.id).kip:0;const pf=q*((+f.priceKip.value||0)-ac);$('#sTot').textContent=kip(q*(+f.priceKip.value||0));$('#sInfo').textContent=''+tr('ต้นทุนเฉลี่ย')+' '+kip(ac)+' · '+tr('กำไร')+' '+(pf<0?'−':'')+kip(Math.abs(pf))};
+  const fill=()=>{const p=prod(f.pid.value);if(p){f.priceKip.value=p.priceKip||'';f.priceBaht.value=p.priceBaht||'';f.priceBaht.dataset.t='1';f.qty.max=p.stock||1}upd()};
+  if(pid&&av.some(p=>p.id===pid))f.pid.value=pid;f.pid.addEventListener('change',fill);f.addEventListener('input',upd);fill();
+}
+async function submitSale(f){
+  const err=$('#sErr');err.textContent='';
+  const p=prod(f.pid.value),qty=Math.round(+f.qty.value);
+  if(!p)return;
+  if(!(qty>0)){err.textContent=''+tr('ใส่จำนวนอย่างน้อย')+' 1 '+tr('เครื่อง')+'';return}
+  if(qty>(p.stock||0)){err.textContent=''+tr('คงเหลือเพียง')+' '+nf(p.stock)+' '+tr('เครื่อง')+'';return}
+  if(f.priceKip.value===''){err.textContent=''+tr('ใส่ราคาที่ขายเป็นเงินกีบ')+'';return}
+  const btn=f.querySelector('[type=submit]');btn.disabled=true;
+  try{
+    const ac=avgCost(p.id);
+    await S.db.collection('sales').doc().set({productId:p.id,date:f.date.value,qty,priceKip:+f.priceKip.value,priceBaht:+f.priceBaht.value||0,costKip:Math.round(ac.kip),costBaht:Math.round(ac.baht),customer:f.customer.value.trim(),note:f.note.value.trim(),createdAt:new Date().toISOString()});
+    await S.db.doc('products/'+p.id).update({stock:(p.stock||0)-qty});
+    closeModal();toast(''+tr('บันทึกการขายแล้ว')+'');
+  }catch(e){err.textContent=''+tr('บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง')+'';btn.disabled=false}
+}
+async function submitSet(f){
+  const err=$('#setErr');err.textContent='';
+  const v={};for(const k of ['shopName','tagline','tagline_lo','tagline_en','phone','whatsapp','contact','address'])v[k]=f.elements[k].value.trim();
+  if(uploading){err.textContent=tr('รอรูปอัปโหลดให้เสร็จก่อน');return}
+  v.logoId=f.elements.imageId.value;if(v.logoId!==(S.settings.logoId||''))v.markId='';
+  v.rate=Math.max(1,+f.rate.value||714);v.cols=+f.cols.value||2;v.lang=f.elements.lang.value;
+  try{await S.db.doc('settings/main').set(Object.assign({},S.settings,v));toast(''+tr('บันทึกการตั้งค่าแล้ว')+'')}catch(e){err.textContent=''+tr('บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง')+''}
+}
+/* arm-then-confirm delete (no confirm() dialogs in the viewer) */
+function armed(btn,fn){
+  if(btn.dataset.arm){clearTimeout(btn._t);fn();return}
+  const old=btn.textContent;btn.dataset.arm='1';btn.textContent=''+tr('กดอีกครั้งเพื่อลบ')+'';
+  btn._t=setTimeout(()=>{btn.textContent=old;delete btn.dataset.arm},3000);
+}
+async function delPur(id){
+  const r=S.purchases.find(x=>x.id===id);if(!r)return;const p=prod(r.productId);
+  try{await S.db.doc('purchases/'+id).delete();if(p)await S.db.doc('products/'+p.id).update({stock:Math.max(0,(p.stock||0)-r.qty)});toast(''+tr('ลบรายการรับเข้าแล้ว')+'')}catch(e){toast(''+tr('ลบไม่สำเร็จ')+'')}
+}
+async function delSale(id){
+  const r=S.sales.find(x=>x.id===id);if(!r)return;const p=prod(r.productId);
+  try{await S.db.doc('sales/'+id).delete();if(p)await S.db.doc('products/'+p.id).update({stock:(p.stock||0)+r.qty});toast(''+tr('ลบรายการขายแล้ว')+'')}catch(e){toast(''+tr('ลบไม่สำเร็จ')+'')}
+}
+async function recalc(){
+  try{let n=0;for(const p of S.products){const inn=S.purchases.filter(r=>r.productId===p.id).reduce((t,r)=>t+r.qty,0),out=S.sales.filter(r=>r.productId===p.id).reduce((t,r)=>t+r.qty,0);const st=Math.max(0,inn-out);if(st!==(p.stock||0)){await S.db.doc('products/'+p.id).update({stock:st});n++}}toast(n?''+tr('ปรับสต็อก')+' '+n+' '+tr('รุ่น')+'':''+tr('สต็อกตรงกับประวัติแล้ว')+'')}catch(e){toast(''+tr('คำนวณไม่สำเร็จ')+'')}
+}
+
+/* ---------- events ---------- */
+function shiftPeriod(d){
+  if(S.mode==='month'){let [y,m]=S.period.split('-').map(Number);m+=d;while(m<1){m+=12;y--}while(m>12){m-=12;y++}S.period=monthKey(y,m)}
+  else S.year=String(+S.year+d);
+}
+document.addEventListener('click',e=>{
+  {const lm=$('#langMenu');if(lm&&!lm.hidden&&!e.target.closest('.langwrap'))lm.hidden=true}
+  if(e.target.id==='modal'){closeModal();return}
+  const b=e.target.closest('[data-act]');if(!b)return;
+  const a=b.dataset.act,id=b.dataset.id;
+  switch(a){
+    case 'close':closeModal();break;
+    case 'lang':{const lm=$('#langMenu');lm.hidden=!lm.hidden;if(!lm.hidden){lm.style.left='0';lm.style.right='auto';const br=$('#langBtn').getBoundingClientRect();if(br.left+lm.offsetWidth>window.innerWidth-8){lm.style.left='auto';lm.style.right='0'}}break}
+    case 'setlang':S.lang=b.dataset.l;lsSet('ac_lang',S.lang);$('#langMenu').hidden=true;render();break;
+    case 'view':S.view=b.dataset.v;history.replaceState(null,'','#'+S.view);render();window.scrollTo(0,0);break;
+    case 'tab':S.tab=b.dataset.t;render();break;
+    case 'mode':S.mode=b.dataset.m;render();break;
+    case 'prev':shiftPeriod(-1);render();break;
+    case 'next':shiftPeriod(1);render();break;
+    case 'now':S.period=today().slice(0,7);S.year=today().slice(0,4);render();break;
+    case 'brand':S.brand=b.dataset.b;render();break;
+    case 'cols':S.cols=+b.dataset.n;lsSet('ac_cols',String(S.cols));render();break;
+    case 'open':openDetail(id);break;
+    case 'copy':try{navigator.clipboard.writeText(b.dataset.t).then(()=>toast(''+tr('คัดลอกแล้ว')+''),()=>toast(''+tr('คัดลอกไม่ได้ ลองเลือกข้อความเอง')+''))}catch(x){toast(''+tr('คัดลอกไม่ได้ ลองเลือกข้อความเอง')+'')}break;
+    case 'newpur':case 'pickpur':purForm(id);break;
+    case 'picksale':{const pp=prod(id);if(pp&&(pp.stock||0)>0)saleForm(id);else toast(''+tr('สินค้าหมดสต็อก รับเข้าก่อนจึงจะขายได้')+'');break}
+    case 'newsale':saleForm();break;
+    case 'delpur':armed(b,()=>delPur(id));break;
+    case 'delsale':armed(b,()=>delSale(id));break;
+    case 'delprod':armed(b,async()=>{try{await S.db.doc('products/'+id).delete();closeModal();toast(''+tr('ลบสินค้าแล้ว')+'')}catch(x){toast(''+tr('ลบไม่สำเร็จ')+'')}});break;
+    case 'recalc':recalc();break;
+    case 'lock':S.unlocked=false;try{sessionStorage.removeItem('ac_unlock')}catch(x){}S.view='shop';history.replaceState(null,'','#shop');render();window.scrollTo(0,0);break;
+    case 'bk':backup(b.dataset.k);break;
+    case 'login':openModal(tr('เข้าสู่ระบบหลังบ้าน'),'<form class="form" id="fLogin" autocomplete="on"><label>'+tr('อีเมล')+'<input name="email" type="email" autocomplete="username" required></label><label>'+tr('รหัสผ่าน')+'<input name="pw" type="password" autocomplete="current-password" required></label><div class="err" id="loginErr"></div><button class="btn primary" type="submit">'+tr('เข้าสู่ระบบ')+'</button></form>');break;
+    case 'logout':(async()=>{try{await window.FBAUTH.logout()}catch(x){}location.hash='';location.reload()})();break;
+    case 'seed':seedOld();break;
+    case 'reload':location.reload();break;
+    case 'hk':S.hist.kind=b.dataset.k;S.hist.month='all';render();break;
+  }
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&!$('#modal').hidden)closeModal();
+  if((e.key==='Enter'||e.key===' ')&&e.target.matches&&e.target.matches('.card')){e.preventDefault();e.target.click()}
+});
+document.addEventListener('input',e=>{if(e.target.id==='qIn'){S.q=e.target.value;drawGrid()}else if(e.target.id==='hQ'&&S.hist){S.hist.q=e.target.value;drawHist()}});
+document.addEventListener('change',e=>{
+  const t=e.target;
+  if(t.id==='sortSel'){S.sort=t.value;drawGrid()}
+  else if(t.id==='pm'&&t.value){S.period=t.value;render()}
+  else if(t.id==='py'){S.year=t.value;render()}
+  else if(t.id==='alangSel'){S.alang=t.value;lsSet('ac_alang',t.value);render()}
+  else if(t.id==='hMonth'&&S.hist){S.hist.month=t.value;drawHist()}
+});
+document.addEventListener('submit',e=>{
+  e.preventDefault();const f=e.target;
+  if(f.id==='fPur')submitPur(f);else if(f.id==='fSale')submitSale(f);else if(f.id==='fSet')submitSet(f);else if(f.id==='fLock')submitLock(f);else if(f.id==='fLogin')submitLogin(f);else if(f.id==='fPin')submitPin(f);
+});
+window.addEventListener('hashchange',()=>{S.view=location.hash==='#admin'?'admin':'shop';render()});
+
+/* ---------- boot ---------- */
+async function boot(){
+  S.lang=lsGet('ac_lang')||null;S.alang=lsGet('ac_alang')||'th';
+  S.view=location.hash==='#admin'?'admin':'shop';
+  render();
+  const slow=setTimeout(()=>{if(!S.loaded){S.slow=true;render()}},10000);
+  let db=null,user=null;
+  try{db=await window.claude.use('db')}catch(e){}
+  try{user=await window.claude.use('user')}catch(e){}
+  if(!db){S.dbOff=true;clearTimeout(slow);render();return}
+  S.db=db;
+  try{S.canEdit=!!(user&&user.canEdit&&user.canEdit())}catch(e){}
+  const err=()=>{S.dbOff=true;render()};
+  db.collection('products').onSnapshot(s=>{S.products=snapArr(s);S.loaded=true;S.dbOff=false;clearTimeout(slow);render()},err);
+  db.doc('settings/main').onSnapshot(s=>{S.settings=s.exists?s.data():{};try{if(S.settings.pinHash&&sessionStorage.getItem('ac_unlock')===S.settings.pinHash)S.unlocked=true}catch(e){}render()},()=>{});
+  if(S.canEdit){
+    db.collection('purchases').onSnapshot(s=>{S.purchases=snapArr(s);render()},()=>{});
+    db.collection('sales').onSnapshot(s=>{S.sales=snapArr(s);render()},()=>{});
+  }
+  render();
+}
+boot();
+})();
+</script>
+</body></html>
