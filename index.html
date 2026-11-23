@@ -71,7 +71,7 @@ h1,h2,h3,h4{font-family:var(--f-d);margin:0;font-weight:500;text-wrap:balance}
 .seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
 .seg.sm button{padding:6px 12px;font-size:13px}
 .seg.tabs button{padding:9px 6px}
-.seg.tabs{position:sticky;top:calc(var(--toph,64px) + env(safe-area-inset-top,0px) + 6px);z-index:40;box-shadow:0 0 0 6px var(--bg)}
+#tabsHost .seg.tabs{margin:8px 0 2px}
 .pchk{display:flex;align-items:center;gap:6px;font-size:14px;cursor:pointer}.pchk input{width:20px;height:20px;accent-color:var(--accent,#5de0cf)}
 
 .btn{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:10px 16px;cursor:pointer;font-weight:500;display:inline-flex;align-items:center;justify-content:center;gap:8px}
@@ -624,7 +624,8 @@ function sumMonth(key){let sk=0,pk=0;for(const s of S.sales)if(s.date&&s.date.st
 
 /* ---------- render ---------- */
 let raf=0;
-function render(){cancelAnimationFrame(raf);raf=requestAnimationFrame(draw)}
+function syncTabs(){try{let host=document.getElementById('tabsHost');if(!host){host=document.createElement('div');host.id='tabsHost';host.style.cssText='flex-basis:100%;width:100%';document.querySelector('.top .wrap').appendChild(host)}const tb=document.querySelector('#app .seg.tabs');if(tb){host.innerHTML='';host.appendChild(tb)}else if(S.view!=='admin'||!S.canEdit)host.innerHTML='';if(window.hh)window.hh()}catch(e){}}
+function render(){cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{draw();syncTabs()})}
 function draw(){
   $('#shopName').textContent=shopTitle();
   {const lid=S.settings.markId||S.settings.logoId,im=$('#logoMark'),sv=$('#logoSvg');if(lid)im.src=imgUrl(lid);im.toggleAttribute('hidden',!lid);sv.toggleAttribute('hidden',!!lid)}
@@ -1078,7 +1079,7 @@ async function boot(){
   try{if(sessionStorage.getItem('ac_idle')){sessionStorage.removeItem('ac_idle');toast(tr('ออกจากระบบอัตโนมัติ เพราะไม่ได้ใช้งานนาน 30 นาที'))}}catch(e){}
 }
 document.addEventListener('change',e=>{const t=e.target;if(t&&t.classList&&t.classList.contains('staffperm')){const row=t.closest('.pbox');const g=k=>row.querySelector('[data-k='+k+']').checked;S.db.doc('staff/'+t.dataset.id).update({all:false,sum:g('sum'),in:g('in'),out:g('out')}).then(()=>toast(tr('เปลี่ยนสิทธิ์แล้ว'))).catch(()=>toast(tr('บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง')))}});
-const hh=()=>{const h=document.querySelector('.top');if(h)document.documentElement.style.setProperty('--toph',h.offsetHeight+'px')};hh();addEventListener('resize',hh);setTimeout(hh,500);setTimeout(hh,1500);
+const hh=()=>{const h=document.querySelector('.top');if(h)document.documentElement.style.setProperty('--toph',h.offsetHeight+'px')};hh();addEventListener('resize',hh);try{const tp=document.querySelector('.top');if(tp&&window.ResizeObserver)new ResizeObserver(hh).observe(tp);else setInterval(hh,500)}catch(e){setInterval(hh,500)}setInterval(hh,1000);
 boot();
 })();
 </script>
