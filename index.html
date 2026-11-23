@@ -410,6 +410,10 @@ window.QR=(function(){
     };
   }
   const authState=f=>new Promise(res=>{const u=f.au.onAuthStateChanged(f.auth,x=>{u();res(x)})});
+  const RK='ac_role';
+  const readRole=()=>{try{const c=JSON.parse(localStorage.getItem(RK)||'null');return c&&c.uid&&c.perms?c:null}catch(e){return null}};
+  const saveRole=(u,r)=>{try{localStorage.setItem(RK,JSON.stringify({uid:u.uid,owner:r.owner,perms:r.perms,canEdit:r.canEdit}))}catch(e){}};
+  const clearRole=()=>{try{localStorage.removeItem(RK)}catch(e){}};
   async function role(f,u){
     const owner=!!u&&u.uid===window.OWNER_UID;let staff=false,perms={all:owner,in:owner,out:owner};
     if(u&&!owner){try{const d=await f.fs.getDoc(f.fs.doc(f.db,'staff/'+u.uid));staff=d.exists();if(staff){const x=d.data()||{};perms=(x.all===undefined&&x.sum===undefined&&x.in===undefined&&x.out===undefined)||x.all===true?{all:true,in:true,out:true}:{all:!!x.sum,in:!!x.in,out:!!x.out}}}catch(e){}}
@@ -443,7 +447,8 @@ window.QR=(function(){
       const c=await f.au.signInWithEmailAndPassword(f.auth,email,pw);
       setLast();
       const r=await role(f,c.user);
-      if(!r.canEdit){await f.au.signOut(f.auth);const e=new Error('notowner');e.code='notowner';throw e}
+      if(r.canEdit)saveRole(c.user,r);
+      if(!r.canEdit){clearRole();await f.au.signOut(f.auth);const e=new Error('notowner');e.code='notowner';throw e}
     },
     async addStaff(email,pw,perm){perm=perm||{all:true,in:true,out:true};
       const f=await fb();
@@ -454,13 +459,23 @@ window.QR=(function(){
       await f.fs.setDoc(f.fs.doc(f.db,'staff/'+uid),{email:email,all:false,sum:!!(perm.sum||perm.all),in:!!perm.in,out:!!perm.out,createdAt:new Date().toISOString()});
     },
     async changePassword(oldp,newp){const f=await fb();const u=f.auth.currentUser;if(!u){const e=new Error('nouser');e.code='nouser';throw e}const cred=f.au.EmailAuthProvider.credential(u.email,oldp);await f.au.reauthenticateWithCredential(u,cred);await f.au.updatePassword(u,newp)},
-    async logout(){const f=await fb();await f.au.signOut(f.auth)}
+    async logout(){clearRole();const f=await fb();await f.au.signOut(f.auth)}
   };
   const toDataUrl=blob=>new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(blob)});
   window.claude={use:async n=>{
     try{
       if(n==='db')return makeDb(await fb());
-      if(n==='user'){const f=await fb();const u=await authState(f);const r=await role(f,u);signed=!!r.canEdit;if(signed){idleCheck();if(signed)setLast()}return {canEdit:()=>r.canEdit,isOwner:()=>r.owner,perms:()=>r.perms}}
+      if(n==='user'){
+        const cr=readRole();
+        if(cr&&cr.canEdit){
+          signed=true;idleCheck();
+          (async()=>{try{const f=await fb();const u=await authState(f);const r=u?await role(f,u):null;
+            if(!u||!r||!r.canEdit||u.uid!==cr.uid){clearRole();location.reload();return}
+            if(r.owner!==cr.owner||JSON.stringify(r.perms)!==JSON.stringify(cr.perms)){saveRole(u,r);location.reload()}
+          }catch(e){}})();
+          return {canEdit:()=>true,isOwner:()=>!!cr.owner,perms:()=>cr.perms};
+        }
+        const f=await fb();const u=await authState(f);const r=await role(f,u);signed=!!r.canEdit;if(signed){saveRole(u,r);idleCheck();if(signed)setLast()}else clearRole();return {canEdit:()=>r.canEdit,isOwner:()=>r.owner,perms:()=>r.perms}}
       if(n==='assets')return {upload:async blob=>{const d=await toDataUrl(blob);return {id:d,url:d}}};
       if(n==='downloads')return {save:async({filename,data})=>{const b=data instanceof Blob?data:new Blob([data]);const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=filename;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000);return {status:'saved'}}};
     }catch(e){return null}
