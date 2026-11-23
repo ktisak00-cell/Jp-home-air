@@ -1,9 +1,10 @@
 /* JP Home air - service worker: ลองเน็ตก่อน ถ้าเน็ตหลุดใช้ของที่เก็บไว้ */
-const C='jp-home-air-v1';
+const C='jp-home-air-v2';
 self.addEventListener('install',()=>{self.skipWaiting()});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x)))).then(()=>self.clients.claim()))});
 self.addEventListener('fetch',e=>{
   const r=e.request;
   if(r.method!=='GET'||new URL(r.url).origin!==location.origin)return;
+  if(/\.(jpg|png|webmanifest)$/.test(new URL(r.url).pathname)){e.respondWith(caches.match(r).then(m=>{const n=fetch(r).then(res=>{const cp=res.clone();caches.open(C).then(c=>c.put(r,cp));return res}).catch(()=>m);return m||n}));return}
   e.respondWith(fetch(r).then(res=>{const cp=res.clone();caches.open(C).then(c=>c.put(r,cp));return res}).catch(()=>caches.match(r).then(m=>m||caches.match('./'))));
 });
