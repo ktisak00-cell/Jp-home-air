@@ -2,7 +2,7 @@
 <html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#0d9488"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="JP Home air">
 <title>ระบบขายแอร์</title>
-<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin><link rel="preconnect" href="https://firestore.googleapis.com"><link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"><link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"><link rel="modulepreload" href="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"><link rel="preload" href="logo.jpg" as="image"><meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=Kanit:wght@400;500;600&family=Noto+Sans+Lao:wght@400;500;600&display=swap">
 <style>
 /* Layout: sticky top bar, one column up to 1100px. Frosted "cool air" surfaces, one accent (ice teal), periwinkle for purchases. */
@@ -384,6 +384,7 @@ window.QR=(function(){
     })();
     return fbp;
   }
+  try{fb().catch(()=>{})}catch(e){}
   const clean=o=>JSON.parse(JSON.stringify(o));
   function docRef(f,path){
     const R=()=>f.fs.doc(f.db,path);
@@ -1058,17 +1059,24 @@ async function boot(){
   S.view=location.hash==='#admin'?'admin':'shop';
   render();
   const slow=setTimeout(()=>{if(!S.loaded){S.slow=true;render()}},10000);
+  try{
+    const cp=JSON.parse(localStorage.getItem('ac_c_p')||'null'),cs=JSON.parse(localStorage.getItem('ac_c_s')||'null');
+    if(Array.isArray(cp)){S.products=cp;S.loaded=true;S.fromCache=true}
+    S.settings=Object.assign({},window.DEFAULT_SETTINGS||{},cs||{});
+  }catch(e){S.settings=Object.assign({},window.DEFAULT_SETTINGS||{})}
+  render();
   let db=null,user=null;
+  const pu=window.claude.use('user').catch(()=>null);
   try{db=await window.claude.use('db')}catch(e){}
-  try{user=await window.claude.use('user')}catch(e){}
-  if(!db){S.dbOff=true;clearTimeout(slow);render();return}
+  if(!db){S.dbOff=!S.fromCache;clearTimeout(slow);render();return}
   S.db=db;
+  db.collection('products').onSnapshot(s=>{S.products=snapArr(s);S.loaded=true;S.fromCache=false;S.dbOff=false;clearTimeout(slow);try{localStorage.setItem('ac_c_p',JSON.stringify(S.products))}catch(e){}render()},()=>{S.dbOff=!S.fromCache;render()});
+  db.doc('settings/main').onSnapshot(s=>{S.settings=s.exists?s.data():{};try{localStorage.setItem('ac_c_s',JSON.stringify(S.settings))}catch(e){}render()},()=>{});
+  user=await pu;
   try{S.canEdit=!!(user&&user.canEdit&&user.canEdit())}catch(e){}
   try{S.isOwner=!!(user&&user.isOwner&&user.isOwner())}catch(e){}
   try{S.perm=user&&user.perms?user.perms():{all:S.isOwner,in:S.isOwner,out:S.isOwner}}catch(e){}
   const err=()=>{S.dbOff=true;render()};
-  db.collection('products').onSnapshot(s=>{S.products=snapArr(s);S.loaded=true;S.dbOff=false;clearTimeout(slow);render()},err);
-  db.doc('settings/main').onSnapshot(s=>{S.settings=s.exists?s.data():{};try{if(S.settings.pinHash&&sessionStorage.getItem('ac_unlock')===S.settings.pinHash)S.unlocked=true}catch(e){}render()},()=>{});
   if(S.canEdit){
     if(S.perm.in||S.perm.all)db.collection('purchases').onSnapshot(s=>{S.purchases=snapArr(s);S.loadedP=true;render();fixSales()},()=>{});
     if(S.perm.out||S.perm.all)db.collection('sales').onSnapshot(s=>{S.salesRaw=snapArr(s);S.loadedS=true;joinSales();render();fixSales()},()=>{});
